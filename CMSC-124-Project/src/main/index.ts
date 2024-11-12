@@ -1,20 +1,25 @@
-import { app, shell, BrowserWindow, ipcMain } from 'electron'
+import { app, shell, BrowserWindow, ipcMain, dialog } from 'electron'
+import * as fs from 'fs'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import express from 'express';
 import router from './routes/route'
+import contextMenu from 'electron-context-menu';
+
+let mainWindow: BrowserWindow;
 
 function createWindow(): void {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 900,
-    height: 670,
+  mainWindow = new BrowserWindow({
+    width: 1200,
+    height: 900,
     show: false,
     autoHideMenuBar: true,
+    trafficLightPosition: { x:15, y:10 },
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(__dirname, './preload/preload.js'),
       sandbox: false
     }
   })
@@ -37,6 +42,32 @@ function createWindow(): void {
   }
 }
 
+async function handleOpenDirectory() {
+  const win = BrowserWindow.getFocusedWindow();
+  if (!win) {
+    return null;
+  }
+
+  const result = await dialog.showOpenDialog(win, {
+    properties: ['openFile', 'openDirectory'],
+  });
+
+  if (result.canceled) {
+    return null;
+  }
+
+  const filePath = result.filePaths[0];
+  try {
+    const fileContent = fs.readFileSync(filePath, 'utf-8');
+    return { filePath, fileContent };
+  } catch (error) {
+    console.error('Error reading file:', error);
+    return { error: 'Failed to read file' };
+  }
+}
+
+ipcMain.handle('open-directory', handleOpenDirectory);
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -54,7 +85,27 @@ app.whenReady().then(() => {
   // IPC test
   ipcMain.on('ping', () => console.log('pong'))
 
-  createWindow()
+  createWindow();
+
+  contextMenu({
+    prepend: (defaultActions, params, browserWindow) => [
+      {
+        label: 'View Page Source',
+        click: () => {
+          (browserWindow as BrowserWindow).webContents.executeJavaScript('document.documentElement.outerHTML').then((html) => {
+            const sourceWindow = new BrowserWindow({
+              width: 800,
+              height: 600,
+              webPreferences: {
+                nodeIntegration: true,
+              },
+            });
+            sourceWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+          });
+        },
+      },
+    ],
+  });
 
   app.on('activate', function () {
     // On macOS it's common to re-create a window in the app when the
