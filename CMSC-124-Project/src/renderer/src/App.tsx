@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Textarea } from './components/ui/textarea'
 import { Button } from './components/ui/button'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -197,77 +198,83 @@ function App(): JSX.Element {
   }
 
   return (
-    <div className="p-[10px] flex gap-3">
-      <div>
-        <input type="file" onChange={handleFileUpload} />
+    <div className="flex gap-3 h-full p-[20px]">
+      <div className="w-[60%] h-[500px] flex-col gap-3">
+        <Button>
+          <input type="file" onChange={handleFileUpload} />
+        </Button>
+        <Textarea
+          placeholder="Type your LolCode Here"
+          value={text}
+          onChange={handleChange}
+          className="whitespace-pre w-full"
+          onKeyDown={(e) => {
+            if (e.key === 'Tab') {
+              e.preventDefault()
+              const start = e.currentTarget.selectionStart
+              const end = e.currentTarget.selectionEnd
+              setText(text.substring(0, start) + '\t' + text.substring(end))
+              setTimeout(() => {
+                e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 1
+              }, 0)
+            }
+          }}
+        />
       </div>
-      <Textarea
-        placeholder="Type your LolCode Here"
-        value={text}
-        onChange={handleChange}
-        className="whitespace-pre"
-        onKeyDown={(e) => {
-          if (e.key === 'Tab') {
-            e.preventDefault()
-            const start = e.currentTarget.selectionStart
-            const end = e.currentTarget.selectionEnd
-            setText(text.substring(0, start) + '\t' + text.substring(end))
-            setTimeout(() => {
-              e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 1
-            }, 0)
-          }
-        }}
-      />
-      <div className="flex gap-3 w-[60%]">
+      <div className="flex gap-3 w-[60%] h-full">
         <div className="p-[10px] border border-inherit container rounded-md">
-          <div className="w-full text-primary-foreground font-bold text-center border-b border-inherit pb-2">
+          <div className="w-full text-primary-foreground font-bold text-center pb-2 text-xl">
             Lexemes
           </div>
-          <Table className="text-center">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold text-primary-foreground text-center">
-                  Lexeme
-                </TableHead>
-                <TableHead className="font-bold text-primary-foreground text-center">
-                  Classification
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(symbolTable).map(([identifier, value]) => (
-                <TableRow className="text-primary-foreground" key={identifier}>
-                  <TableCell>{identifier}</TableCell>
-                  <TableCell>{value}</TableCell>
+          <ScrollArea className="h-[750px] w-full rounded-md border">
+            <Table className="text-center">
+              <TableHeader className="">
+                <TableRow className="">
+                  <TableHead className="sticky top-0 font-bold text-primary-foreground text-center">
+                    Lexeme
+                  </TableHead>
+                  <TableHead className="sticky top-0 font-bold text-primary-foreground text-center ">
+                    Classification
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(symbolTable).map(([identifier, value]) => (
+                  <TableRow className="text-primary-foreground" key={identifier}>
+                    <TableCell>{identifier}</TableCell>
+                    <TableCell>{value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </div>
         <div className="p-[10px] border border-inherit container rounded-md">
           <div className="w-full text-primary-foreground font-bold text-center border-b border-inherit pb-2">
             Symbol Table
           </div>
-          <Table className="text-center">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold text-primary-foreground text-center">
-                  Identifier
-                </TableHead>
-                <TableHead className="font-bold text-primary-foreground text-center">
-                  Value
-                </TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(symbolTable).map(([identifier, value]) => (
-                <TableRow className="text-primary-foreground" key={identifier}>
-                  <TableCell>{identifier}</TableCell>
-                  <TableCell>{value}</TableCell>
+          <ScrollArea className="h-[750px] w-full rounded-md border">
+            <Table className="text-center">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-bold text-primary-foreground text-center">
+                    Identifier
+                  </TableHead>
+                  <TableHead className="font-bold text-primary-foreground text-center">
+                    Value
+                  </TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(symbolTable).map(([identifier, value]) => (
+                  <TableRow className="text-primary-foreground" key={identifier}>
+                    <TableCell>{identifier}</TableCell>
+                    <TableCell>{value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
         </div>
       </div>
     </div>
