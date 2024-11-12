@@ -1,6 +1,25 @@
-@import './base.css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
+/* @import './base.css'; */
+
+@layer base {
+  #root {
+    @apply h-full;
+  }
+}
+
+html,
 body {
+  @apply h-full;
+  @apply select-none;
+  @apply bg-transparent;
+  @apply font-mono antialiased text-white;
+  @apply overflow-hidden;
+}
+
+/* body {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -168,4 +187,4 @@ code {
   .actions {
     display: none;
   }
-}
+} */
