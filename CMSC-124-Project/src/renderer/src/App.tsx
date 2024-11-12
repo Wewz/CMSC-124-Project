@@ -11,6 +11,7 @@ import {
   TableRow
 } from '@/components/ui/table'
 import { ipcRenderer } from 'electron'
+import { buttonVariants } from '@/components/ui/button'
 
 function App(): JSX.Element {
   const [text, setText] = useState('')
@@ -200,9 +201,26 @@ function App(): JSX.Element {
   return (
     <div className="flex gap-3 h-full p-[20px]">
       <div className="w-[60%] h-[500px] flex-col gap-3">
-        <Button>
-          <input type="file" onChange={handleFileUpload} />
-        </Button>
+        <div className="flex gap-4">
+          <Button
+            variant={'outline'}
+            className="font-bold mb-[5px]"
+            onClick={() => document.getElementById('fileInput')?.click()}
+          >
+            Open File
+          </Button>
+          <input
+            id="fileInput"
+            className={buttonVariants({ variant: 'outline' })}
+            type="file"
+            onChange={handleFileUpload}
+            style={{ display: 'none' }}
+          />
+
+          <Button className="font-bold" variant={'outline'}>
+            Run Code
+          </Button>
+        </div>
         <Textarea
           placeholder="Type your LolCode Here"
           value={text}
@@ -222,11 +240,11 @@ function App(): JSX.Element {
         />
       </div>
       <div className="flex gap-3 w-[60%] h-full">
-        <div className="p-[10px] border border-inherit container rounded-md">
-          <div className="w-full text-primary-foreground font-bold text-center pb-2 text-xl">
+        <div className="py-[10px] border border-inherit w-[100%] rounded-md">
+          <div className="w-full text-primary-foreground font-bold text-center pb-2 text-md">
             Lexemes
           </div>
-          <ScrollArea className="h-[750px] w-full rounded-md border">
+          <ScrollArea className="h-[760px] w-full border-y">
             <Table className="text-center">
               <TableHeader className="">
                 <TableRow className="">
@@ -240,7 +258,7 @@ function App(): JSX.Element {
               </TableHeader>
               <TableBody>
                 {Object.entries(symbolTable).map(([identifier, value]) => (
-                  <TableRow className="text-primary-foreground" key={identifier}>
+                  <TableRow className="text-primary-foreground text-xs" key={identifier}>
                     <TableCell>{identifier}</TableCell>
                     <TableCell>{value}</TableCell>
                   </TableRow>
@@ -249,11 +267,11 @@ function App(): JSX.Element {
             </Table>
           </ScrollArea>
         </div>
-        <div className="p-[10px] border border-inherit container rounded-md">
-          <div className="w-full text-primary-foreground font-bold text-center border-b border-inherit pb-2">
+        <div className="py-[10px] border border-inherit w-[100%] rounded-md">
+          <div className="w-full text-primary-foreground font-bold text-center pb-2 text-md">
             Symbol Table
           </div>
-          <ScrollArea className="h-[750px] w-full rounded-md border">
+          <ScrollArea className="h-[760px] w-full border-y">
             <Table className="text-center">
               <TableHeader>
                 <TableRow>
@@ -267,7 +285,7 @@ function App(): JSX.Element {
               </TableHeader>
               <TableBody>
                 {Object.entries(symbolTable).map(([identifier, value]) => (
-                  <TableRow className="text-primary-foreground" key={identifier}>
+                  <TableRow className="text-primary-foreground text-xs" key={identifier}>
                     <TableCell>{identifier}</TableCell>
                     <TableCell>{value}</TableCell>
                   </TableRow>
