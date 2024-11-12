@@ -206,6 +206,108 @@ function App(): JSX.Element {
 
     setLexemes(lexemeData)
     setSymbolTable(initialSymbolTable)
+
+    let regex =
+      /\b(?:AN|VISIBLE|HAI|KTHXBYE|WAZZUP|BUHBYE|BTW|OBTW|TLDR|I HAS A|ITZ|R|SUM OF|DIFF OF|PRODUKT OF|QUOSHUNT OF|MOD OF|BIGGR OF|SMALLR OF|BOTH OF|EITHER OF|WON OF|NOT|ANY OF|ALL OF|BOTH SAEM|DIFFRINT|SMOOSH|MAEK|A|IS NOW A|VISIBLE|GIMMEH|O RLY|YA RLY|MEBBE|NO WAI|OIC|WTF|OMG|OMGWTF|IM IN YR|UPPIN|NERFIN|YR|TIL|WILE|IM OUTTA YR|HOW IZ I|IF U SAY SO|GTFO|FOUND YR|I IZ|MKAY)\b\??/g
+
+    let symbolTable: Record<string, string> = {}
+
+    while ((match = regex.exec(content)) !== null) {
+      if (match[0] == 'HAI' || match[0] == 'KTHXBYE' || match[0] == 'BUHBYE') {
+        symbolTable[match[0]] = 'Code Delimiter'
+      } else if (match[0] == 'I HAS A') {
+        symbolTable[match[0]] = 'Variable Declaration'
+      } else if (match[0] == 'ITZ') {
+        symbolTable[match[0]] = 'Variable Assignment'
+      } else if (match[0] == 'R') {
+        symbolTable[match[0]] = 'Variable Assignment'
+      } else if (match[0] == 'VISIBLE') {
+        symbolTable[match[0]] = 'Output'
+      } else if (match[0] == 'GIMMEH') {
+        symbolTable[match[0]] = 'Input'
+      } else if (
+        match[0] == 'O RLY?' ||
+        match[0] == 'YA RLY' ||
+        match[0] == 'MEBBE' ||
+        match[0] == 'NO WAI' ||
+        match[0] == 'OIC'
+      ) {
+        symbolTable[match[0]] = 'Conditional Statement'
+      } else if (match[0] == 'WTF?' || match[0] == 'OMG' || match[0] == 'OMGWTF') {
+        symbolTable[match[0]] = 'Switch Case'
+      } else if (match[0] == 'IM IN YR') {
+        symbolTable[match[0]] = 'Loop'
+      } else if (match[0] == 'UPPIN') {
+        symbolTable[match[0]] = 'Increment'
+      } else if (match[0] == 'NERFIN') {
+        symbolTable[match[0]] = 'Decrement'
+      } else if (
+        match[0] == 'YR' ||
+        match[0] == 'IM OUTTA YR' ||
+        match[0] == 'FOUND YR' ||
+        match[0] == 'TIL' ||
+        match[0] == 'WILE'
+      ) {
+        symbolTable[match[0]] = 'Loop Delimiter'
+      } else if (
+        match[0] == 'SUM OF' ||
+        match[0] == 'DIFF OF' ||
+        match[0] == 'PRODUKT OF' ||
+        match[0] == 'QUOSHUNT OF' ||
+        match[0] == 'MOD OF'
+      ) {
+        symbolTable[match[0]] = 'Arithmetic Operator'
+      } else if (
+        match[0] == 'BIGGR OF' ||
+        match[0] == 'SMALLR OF' ||
+        match[0] == 'BOTH OF' ||
+        match[0] == 'EITHER OF' ||
+        match[0] == 'WON OF' ||
+        match[0] == 'NOT' ||
+        match[0] == 'ANY OF' ||
+        match[0] == 'ALL OF' ||
+        match[0] == 'BOTH SAEM' ||
+        match[0] == 'DIFFRINT' ||
+        match[0] == 'SMOOSH' ||
+        match[0] == 'MAEK' ||
+        match[0] == 'A' ||
+        match[0] == 'IS NOW A' ||
+        match[0] == 'MKAY' ||
+        match[0] == 'AN'
+      ) {
+        symbolTable[match[0]] = 'Logical Operator'
+      } else if (match[0] == 'IF U SAY SO' || match[0] == 'GTFO') {
+        symbolTable[match[0]] = 'Exit'
+      } else if (match[0] == 'I IZ') {
+        symbolTable[match[0]] = 'Function Declaration'
+      } else if (match[0] == 'HOW IZ I') {
+        symbolTable[match[0]] = 'Function Call'
+      }
+    }
+
+    regex = /"([^"]*)"/g
+    while ((match = regex.exec(content)) !== null) {
+      symbolTable['"'] = 'String Delimiter'
+      symbolTable[match[0]] = 'String Literal'
+    }
+
+    regex = /-?\b\d+\b/g
+    while ((match = regex.exec(content)) !== null) {
+      symbolTable[match[0]] = 'NUMBR Literal'
+    }
+
+    regex = /-?\b\d+\.\d+\b/g
+    while ((match = regex.exec(content)) !== null) {
+      symbolTable[match[0]] = 'NUMBAR Literal'
+    }
+
+    regex = /\b[^\s]([a-zA-Z][a-zA-Z0-9_]*)\b/g
+    while ((match = regex.exec(content)) !== null) {
+      if (!(match[0] in keywords)) {
+        symbolTable[match[0]] = 'Identifier'
+      }
+    }
+    setSymbolTable(symbolTable)
   }
 
   return (
@@ -267,10 +369,10 @@ function App(): JSX.Element {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Object.entries(symbolTable).map(([identifier, value]) => (
-                  <TableRow className="text-primary-foreground text-xs" key={identifier}>
-                    <TableCell>{identifier}</TableCell>
-                    <TableCell>{value}</TableCell>
+                {lexemes.map(({ lexeme, classification }, index) => (
+                  <TableRow className="text-primary-foreground text-xs" key={index}>
+                    <TableCell>{lexeme}</TableCell>
+                    <TableCell>{classification}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
