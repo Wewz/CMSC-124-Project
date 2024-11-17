@@ -17,25 +17,21 @@ interface LexemeTableProps {
 const LexemeTable: React.FC<LexemeTableProps> = ({ lexemes }) => {
   return (
     <>
-      <div className="py-[10px] border border-inherit w-[100%] rounded-md">
-        <div className="w-full text-primary-foreground font-bold text-center pb-2 text-md">
-          Lexemes
-        </div>
-        <ScrollArea className="h-[760px] w-full border-y">
+      <div className="w-full h-[50%] p-[10px]">
+        <div className="w-full font-bold py-[10px] text-md pl-[30px]">Lexeme Table</div>
+        <ScrollArea className="h-[330px] w-full border border-inherit rounded-md">
           <Table className="text-center">
             <TableHeader className="">
               <TableRow className="">
-                <TableHead className="sticky top-0 font-bold text-primary-foreground text-center">
-                  Lexeme
-                </TableHead>
-                <TableHead className="sticky top-0 font-bold text-primary-foreground text-center ">
+                <TableHead className="sticky top-0 font-bold text-center">Lexeme</TableHead>
+                <TableHead className="sticky top-0 font-bold text-center ">
                   Classification
                 </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {lexemes.map(({ lexeme, classification }, index) => (
-                <TableRow className="text-primary-foreground text-xs" key={index}>
+                <TableRow className="text-xs" key={index}>
                   <TableCell>{lexeme}</TableCell>
                   <TableCell>{classification}</TableCell>
                 </TableRow>

@@ -14,10 +14,10 @@ const TextEditor: React.FC<TextEditorProps> = ({ text, setText }) => {
   return (
     <>
       <Textarea
-        placeholder="Type your LolCode Here"
+        placeholder="Type your LOLCODE here"
         value={text}
         onChange={handleChange}
-        className="whitespace-pre w-full"
+        className="whitespace-pre w-full py-[15px]"
         onKeyDown={(e) => {
           if (e.key === 'Tab') {
             e.preventDefault()

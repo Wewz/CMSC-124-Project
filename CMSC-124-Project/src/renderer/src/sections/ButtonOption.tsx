@@ -17,25 +17,35 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
 }) => {
   return (
     <>
-      <div className="flex gap-4">
-        <Button
-          variant={'outline'}
-          className="font-bold mb-[5px]"
-          onClick={() => document.getElementById('fileInput')?.click()}
-        >
-          Open File
-        </Button>
-        <input
-          id="fileInput"
-          className={buttonVariants({ variant: 'outline' })}
-          type="file"
-          onChange={(e) => handleFileUpload(e, setText, setFileContent, setLexemes, setSymbolTable)}
-          style={{ display: 'none' }}
-        />
+      <div className="flex justify-between">
+        <div className="flex gap-4">
+          <Button
+            variant={'outline'}
+            className="font-bold mb-[5px]"
+            onClick={() => document.getElementById('fileInput')?.click()}
+          >
+            Open File
+          </Button>
+          <input
+            id="fileInput"
+            className={buttonVariants({ variant: 'outline' })}
+            type="file"
+            onChange={(e) =>
+              handleFileUpload(e, setText, setFileContent, setLexemes, setSymbolTable)
+            }
+            style={{ display: 'none' }}
+          />
 
-        <Button className="font-bold" variant={'outline'}>
-          Run Code
-        </Button>
+          <Button className="font-bold" variant={'outline'}>
+            Save File
+          </Button>
+        </div>
+
+        <div>
+          <Button className="font-bold" variant={'outline'}>
+            Run Code
+          </Button>
+        </div>
       </div>
     </>
   )
