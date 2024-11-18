@@ -31,6 +31,7 @@ function App(): JSX.Element {
           </div>
         </div>
 
+        {/* Terminal */}
         <Terminal />
       </div>
 
