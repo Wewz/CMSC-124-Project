@@ -26,7 +26,9 @@ function App(): JSX.Element {
           />
 
           {/* Text Editor */}
-          <TextEditor text={text} setText={setText} />
+          <div className="mt-[10px]">
+            <TextEditor text={text} setText={setText} />
+          </div>
         </div>
 
         <Terminal />

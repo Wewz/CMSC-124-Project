@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react'
 import CodeMirror from '@uiw/react-codemirror'
-import { vscodeDark, vscodeDarkInit } from '@uiw/codemirror-theme-vscode'
 import { createTheme } from '@uiw/codemirror-themes'
 
 const myTheme = createTheme({
@@ -38,7 +37,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ text, setText }) => {
     <>
       <CodeMirror
         value={content}
-        height="475px"
+        height="465px"
         theme={myTheme}
         className="border border-border rounded-md overflow-hidden bg-background-dark"
         onChange={(value) => setText(value)}
