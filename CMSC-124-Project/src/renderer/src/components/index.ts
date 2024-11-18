@@ -15,8 +15,8 @@ import {
 } from "./ui/button";
 
 import { Textarea } from "./ui/textarea";
-
 import { ScrollArea, ScrollBar } from "./ui/scroll-area";
+import { Separator } from "./ui/separator";
 
 export { 
   Table, 
@@ -32,4 +32,5 @@ export {
   Textarea, 
   ScrollArea, 
   ScrollBar,
+  Separator,
 };

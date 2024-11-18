@@ -4,6 +4,7 @@ import TextEditor from './sections/TextEditor'
 import ButtonOption from './sections/ButtonOption'
 import LexemeTable from './sections/LexemeTable'
 import SymbolTable from './sections/SymbolTable'
+import Terminal from './sections/Terminal'
 
 function App(): JSX.Element {
   const [text, setText] = useState('')
@@ -12,10 +13,9 @@ function App(): JSX.Element {
   const [symbolTable, setSymbolTable] = useState<Record<string, string>>({})
 
   return (
-    <>
-      <div className="text-center py-2 font-bold text-[30px]"> LOLCODE Interpreter</div>
-      <div className="flex gap-3 h-full p-[20px]">
-        <div className="w-[60%] h-[500px] flex-col gap-3">
+    <div className="flex h-full">
+      <div className="w-[60%] h-full flex-col gap-3">
+        <div className="p-[20px]">
           {/* Button options above */}
           <ButtonOption
             setText={setText}
@@ -27,15 +27,18 @@ function App(): JSX.Element {
           {/* Text Editor */}
           <TextEditor text={text} setText={setText} />
         </div>
-        <div className="flex-col gap-3 w-[40%] h-full border border-inherit rounded-md">
-          {/* Lexeme Table */}
-          <LexemeTable lexemes={lexemes} />
 
-          {/* Symbol Table */}
-          <SymbolTable symbolTable={symbolTable} />
-        </div>
+        <Terminal />
       </div>
-    </>
+
+      <div className="flex-col gap-3 w-[40%] h-[860px] border-l border-inherit">
+        {/* Lexeme Table */}
+        <LexemeTable lexemes={lexemes} />
+
+        {/* Symbol Table */}
+        <SymbolTable symbolTable={symbolTable} />
+      </div>
+    </div>
   )
 }
 

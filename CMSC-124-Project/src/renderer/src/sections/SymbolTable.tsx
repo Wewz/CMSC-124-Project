@@ -8,6 +8,7 @@ import {
   TableHeader,
   TableRow
 } from '../components/index'
+import { Rabbit } from 'lucide-react'
 
 interface SymbolTableProps {
   symbolTable: Record<string, string>
@@ -16,26 +17,36 @@ interface SymbolTableProps {
 const SymbolTable: React.FC<SymbolTableProps> = ({ symbolTable }) => {
   return (
     <>
-      <div className="w-full h-[50%] p-[10px]">
-        <div className="w-full font-bold py-[10px] text-md pl-[30px]">Symbol Table</div>
-        <ScrollArea className="h-[330px] w-full border border-inherit rounded-md">
-          <Table className="text-center">
-            <TableHeader>
-              <TableRow>
-                <TableHead className="font-bold text-center">Identifier</TableHead>
-                <TableHead className="font-bold text-center">Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {Object.entries(symbolTable).map(([identifier, value]) => (
-                <TableRow className="text-xs" key={identifier}>
-                  <TableCell>{identifier}</TableCell>
-                  <TableCell>{value}</TableCell>
+      <div className="w-full h-[50%] px-[20px] pb-[20px]">
+        <div className="w-full font-bold py-[10px] text-[14px]">Symbol Table</div>
+
+        {Object.keys(symbolTable).length === 0 ? (
+          <div className="w-full h-[350px] flex flex-col items-center justify-center border border-border rounded-md bg-background-dark">
+            <Rabbit size={150} strokeWidth={1} className="text-background-medium mx-auto" />
+            <div className="text-center text-background-medium font-semibold text-[14px] mt-2 px-3 rounded-md">
+              <p>No Data in Symbol Table.</p>
+            </div>
+          </div>
+        ) : (
+          <ScrollArea className="h-[350px] w-full border border-inherit rounded-md">
+            <Table className="text-center">
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="font-bold text-center">Identifier</TableHead>
+                  <TableHead className="font-bold text-center">Value</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </ScrollArea>
+              </TableHeader>
+              <TableBody>
+                {Object.entries(symbolTable).map(([identifier, value]) => (
+                  <TableRow className="text-xs" key={identifier}>
+                    <TableCell>{identifier}</TableCell>
+                    <TableCell>{value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </ScrollArea>
+        )}
       </div>
     </>
   )

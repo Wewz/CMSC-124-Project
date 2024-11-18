@@ -1,6 +1,7 @@
 import React from 'react'
 import { Button, buttonVariants } from '../components/index'
 import handleFileUpload from '@renderer/utils/fileUpload'
+import { Play } from 'lucide-react'
 
 interface ButtonOptionProps {
   setText: React.Dispatch<React.SetStateAction<any>>
@@ -43,6 +44,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
 
         <div>
           <Button className="font-bold" variant={'outline'}>
+            <Play />
             Run Code
           </Button>
         </div>
