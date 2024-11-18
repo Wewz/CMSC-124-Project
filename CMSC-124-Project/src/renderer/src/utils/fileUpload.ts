@@ -1,5 +1,3 @@
-import processFileContent from "./lexemeAnalyzer"
-
 const handleFileUpload = (
   event: React.ChangeEvent<HTMLInputElement>, 
   setText: React.Dispatch<React.SetStateAction<any>>, 

@@ -1,34 +1,47 @@
-import React from 'react'
-import { Textarea } from '../components/index'
+import React, { useEffect, useState } from 'react'
+import CodeMirror from '@uiw/react-codemirror'
+import { vscodeDark, vscodeDarkInit } from '@uiw/codemirror-theme-vscode'
+import { createTheme } from '@uiw/codemirror-themes'
+
+const myTheme = createTheme({
+  theme: 'dark',
+  settings: {
+    background: '#101010',
+    backgroundImage: '',
+    foreground: '#ffff',
+    caret: '#5d00ff',
+    selection: '#0097b210',
+    selectionMatch: '#403c3c',
+    lineHighlight: '#403c3c60',
+    gutterBorder: '0px',
+    gutterBackground: '#101010',
+    gutterForeground: '#838079',
+    fontFamily: 'var(--font-sans)',
+    fontSize: '14px'
+  },
+  styles: []
+})
 
 interface TextEditorProps {
   text: string
-  setText: React.Dispatch<React.SetStateAction<any>>
+  setText: React.Dispatch<React.SetStateAction<string>>
 }
 
 const TextEditor: React.FC<TextEditorProps> = ({ text, setText }) => {
-  const handleChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setText(event.target.value)
-  }
+  const [content, setContent] = useState<string>('')
+
+  useEffect(() => {
+    setContent(text)
+  }, [text])
 
   return (
     <>
-      <Textarea
-        placeholder="Type your LOLCODE here"
-        value={text}
-        onChange={handleChange}
-        className="whitespace-pre w-full py-[15px]"
-        onKeyDown={(e) => {
-          if (e.key === 'Tab') {
-            e.preventDefault()
-            const start = e.currentTarget.selectionStart
-            const end = e.currentTarget.selectionEnd
-            setText(text.substring(0, start) + '\t' + text.substring(end))
-            setTimeout(() => {
-              e.currentTarget.selectionStart = e.currentTarget.selectionEnd = start + 1
-            }, 0)
-          }
-        }}
+      <CodeMirror
+        value={content}
+        height="475px"
+        theme={myTheme}
+        className="border border-border rounded-md overflow-hidden bg-background-dark"
+        onChange={(value) => setText(value)}
       />
     </>
   )
