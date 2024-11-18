@@ -18,6 +18,7 @@ function App(): JSX.Element {
         <div className="p-[20px]">
           {/* Button options above */}
           <ButtonOption
+            text={text}
             setText={setText}
             setFileContent={setFileContent}
             setLexemes={setLexemes}

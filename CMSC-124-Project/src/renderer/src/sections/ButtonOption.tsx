@@ -1,9 +1,11 @@
 import React from 'react'
 import { Button, buttonVariants } from '../components/index'
 import handleFileUpload from '@renderer/utils/fileUpload'
+import processFileContent from '@renderer/utils/lexemeAnalyzer'
 import { Play } from 'lucide-react'
 
 interface ButtonOptionProps {
+  text: string
   setText: React.Dispatch<React.SetStateAction<any>>
   setFileContent: React.Dispatch<React.SetStateAction<any>>
   setLexemes: React.Dispatch<React.SetStateAction<any>>
@@ -11,6 +13,7 @@ interface ButtonOptionProps {
 }
 
 const ButtonOption: React.FC<ButtonOptionProps> = ({
+  text,
   setText,
   setFileContent,
   setLexemes,
@@ -31,9 +34,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             id="fileInput"
             className={buttonVariants({ variant: 'outline' })}
             type="file"
-            onChange={(e) =>
-              handleFileUpload(e, setText, setFileContent, setLexemes, setSymbolTable)
-            }
+            onChange={(e) => handleFileUpload(e, setText, setFileContent)}
             style={{ display: 'none' }}
           />
 
@@ -43,7 +44,13 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
         </div>
 
         <div>
-          <Button className="font-bold" variant={'outline'}>
+          <Button
+            className="font-bold"
+            variant={'outline'}
+            onClick={() => {
+              processFileContent(text, setLexemes, setSymbolTable)
+            }}
+          >
             <Play />
             Run Code
           </Button>

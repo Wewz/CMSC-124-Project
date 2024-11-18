@@ -4,8 +4,6 @@ const handleFileUpload = (
   event: React.ChangeEvent<HTMLInputElement>, 
   setText: React.Dispatch<React.SetStateAction<any>>, 
   setFileContent: React.Dispatch<React.SetStateAction<any>>, 
-  setLexemes: React.Dispatch<React.SetStateAction<any>>, 
-  setSymbolTable: React.Dispatch<React.SetStateAction<any>>
 ) => {
   const file = event.target.files?.[0]
   if (file) {
@@ -14,7 +12,6 @@ const handleFileUpload = (
       const content = e.target?.result as string
       setText(content)
       setFileContent(content)
-      processFileContent(content, setLexemes, setSymbolTable)
     }
     reader.readAsText(file)
   }
