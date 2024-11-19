@@ -5,8 +5,12 @@ import { Lexeme } from '@renderer/interfaces/interfaces';
 const processFileContent = (
   content: string,
   setLexemes: React.Dispatch<React.SetStateAction<any>>,
-  setSymbolTable: React.Dispatch<React.SetStateAction<any>>
+  setSymbolTable: React.Dispatch<React.SetStateAction<any>>,
+  setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
 ) => {
+
+  setTerminalMsg("Terminal Message Testing");
+  
   const lexemeData: Lexeme[] = [];
   const initialSymbolTable: Record<string, string> = {};
   const keywordPositions = new Set<number>();
@@ -17,6 +21,8 @@ const processFileContent = (
   const identifierPattern = /\b[A-Za-z][A-Za-z0-9_]*\b/g;
   const stringPattern = /(["'])(.*?)(\1)/g;
   const numberPattern = /\b\d+(\.\d+)?\b/g;
+
+  const errors:{ error: string, line: number }[] =[]
 
   let match;
 
@@ -81,15 +87,18 @@ const processFileContent = (
     const isValid = tokenRange.every((pos) => validPositions.has(pos));
 
     if (!isValid) {
-      lexemeData.push({
-        lexeme: match[0],
-        classification: 'Error',
-        position: match.index,
+      errors.push({
+        error: match[0], 
+        line: match.index
       });
       for (let i = match.index; i < match.index + match[0].length; i++) {
         errorPositions.add(i);
       }
     }
+  }
+
+  for (const { error, line } of errors) {
+    console.log(error, line);
   }
 
   // Find identifiers, ensuring they don't overlap with errors, keywords, or literals
@@ -119,7 +128,14 @@ const processFileContent = (
     initialSymbolTable[identifier] = value;
   }
 
-  setLexemes(lexemeData);
+  // Remove duplicate lexemes
+  const uniqueLexemeData = lexemeData.filter((lexeme, index, self) =>
+    index === self.findIndex((t) => (
+      t.lexeme === lexeme.lexeme 
+    ))
+  );
+
+  setLexemes(uniqueLexemeData);
   setSymbolTable(initialSymbolTable);
 };
 

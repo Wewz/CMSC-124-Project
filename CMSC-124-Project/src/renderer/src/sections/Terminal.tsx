@@ -1,12 +1,40 @@
+import { useEffect } from 'react'
 import { ReactTerminal } from 'react-terminal'
 
-interface TerminalProps {}
+interface TerminalProps {
+  terminalMsg: string
+  setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
+}
 
-const Terminal: React.FC<TerminalProps> = () => {
+const Terminal: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg }) => {
   const commands = {
     whoami: 'jackharper',
-    cd: (directory) => `changed path to ${directory}`
+    cd: (directory: string) => `changed path to ${directory}`,
+    echo: (text: string) => text,
+    clear: () => {
+      setTerminalMsg('')
+      return ''
+    }
   }
+
+  const handleCommand = (command: string, args: string[]) => {
+    if (commands[command]) {
+      const result = commands[command](...args)
+      setTerminalMsg((prevOutput) => `${prevOutput}\n$ ${command} ${args.join(' ')}\n${result}`)
+    } else {
+      setTerminalMsg(
+        (prevOutput) => `${prevOutput}\n$ ${command} ${args.join(' ')}\nCommand not found`
+      )
+    }
+  }
+
+  const announce = (message: string) => {
+    setTerminalMsg((prevOutput) => `${prevOutput}\n${message}`)
+  }
+
+  useEffect(() => {
+    announce('Welcome to the terminal!\n')
+  }, [])
 
   return (
     <>
@@ -30,6 +58,8 @@ const Terminal: React.FC<TerminalProps> = () => {
           }}
           theme="my-custom-theme"
           showControlBar={false} // Remove the 3 dots in the top bar
+          onCommand={(command, args) => handleCommand(command, args)}
+          welcomeMessage={terminalMsg}
         />
       </div>
     </>

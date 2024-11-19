@@ -11,6 +11,7 @@ function App(): JSX.Element {
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [lexemes, setLexemes] = useState<Lexeme[]>([])
   const [symbolTable, setSymbolTable] = useState<Record<string, string>>({})
+  const [terminalMsg, setTerminalMsg] = useState<string>('')
 
   return (
     <div className="flex h-full">
@@ -23,6 +24,7 @@ function App(): JSX.Element {
             setFileContent={setFileContent}
             setLexemes={setLexemes}
             setSymbolTable={setSymbolTable}
+            setTerminalMsg={setTerminalMsg}
           />
 
           {/* Text Editor */}
@@ -32,7 +34,7 @@ function App(): JSX.Element {
         </div>
 
         {/* Terminal */}
-        <Terminal />
+        <Terminal terminalMsg={terminalMsg} setTerminalMsg={setTerminalMsg} />
       </div>
 
       <div className="flex-col gap-3 w-[40%] h-[860px] border-l border-inherit">

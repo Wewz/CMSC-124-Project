@@ -11,6 +11,7 @@ interface ButtonOptionProps {
   setFileContent: React.Dispatch<React.SetStateAction<any>>
   setLexemes: React.Dispatch<React.SetStateAction<any>>
   setSymbolTable: React.Dispatch<React.SetStateAction<any>>
+  setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
 }
 
 const ButtonOption: React.FC<ButtonOptionProps> = ({
@@ -18,7 +19,8 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
   setText,
   setFileContent,
   setLexemes,
-  setSymbolTable
+  setSymbolTable,
+  setTerminalMsg
 }) => {
   return (
     <>
@@ -49,7 +51,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             className="font-bold"
             variant={'outline'}
             onClick={() => {
-              processFileContent(text, setLexemes, setSymbolTable)
+              processFileContent(text, setLexemes, setSymbolTable, setTerminalMsg)
               syntaxAnalyzer(text, setSymbolTable)
             }}
           >
