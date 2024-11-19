@@ -2,6 +2,7 @@ import React from 'react'
 import { Button, buttonVariants } from '../components/index'
 import handleFileUpload from '@renderer/utils/fileUpload'
 import processFileContent from '@renderer/utils/lexemeAnalyzer'
+import syntaxAnalyzer from '@renderer/utils/syntaxAnalyzer'
 import { Play } from 'lucide-react'
 
 interface ButtonOptionProps {
@@ -49,6 +50,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             variant={'outline'}
             onClick={() => {
               processFileContent(text, setLexemes, setSymbolTable)
+              syntaxAnalyzer(text, setSymbolTable)
             }}
           >
             <Play />
