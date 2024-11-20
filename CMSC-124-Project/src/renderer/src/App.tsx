@@ -4,7 +4,7 @@ import TextEditor from './sections/TextEditor'
 import ButtonOption from './sections/ButtonOption'
 import LexemeTable from './sections/LexemeTable'
 import SymbolTable from './sections/SymbolTable'
-import Terminal from './sections/Terminal'
+import TerminalBox from './sections/Terminal'
 
 function App(): JSX.Element {
   const [text, setText] = useState('')
@@ -34,7 +34,7 @@ function App(): JSX.Element {
         </div>
 
         {/* Terminal */}
-        <Terminal terminalMsg={terminalMsg} setTerminalMsg={setTerminalMsg} />
+        <TerminalBox terminalMsg={terminalMsg} setTerminalMsg={setTerminalMsg} />
       </div>
 
       <div className="flex-col gap-3 w-[40%] h-[860px] border-l border-inherit">

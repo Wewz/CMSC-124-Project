@@ -1,69 +1,114 @@
-import { useEffect } from 'react'
-import { ReactTerminal } from 'react-terminal'
+import { useEffect, useRef } from 'react'
+import { Terminal } from 'xterm'
+import { FitAddon } from 'xterm-addon-fit'
+import 'xterm/css/xterm.css'
 
 interface TerminalProps {
   terminalMsg: string
   setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
 }
 
-const Terminal: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg }) => {
-  const commands = {
-    whoami: 'jackharper',
-    cd: (directory: string) => `changed path to ${directory}`,
-    echo: (text: string) => text,
-    clear: () => {
-      setTerminalMsg('')
-      return ''
-    }
-  }
+const colors = {
+  info: '32', // Green
+  warning: '33', // Yellow
+  error: '31', // Red
+  blue: '34'
+}
 
-  const handleCommand = (command: string, args: string[]) => {
-    if (commands[command]) {
-      const result = commands[command](...args)
-      setTerminalMsg((prevOutput) => `${prevOutput}\n$ ${command} ${args.join(' ')}\n${result}`)
-    } else {
-      setTerminalMsg(
-        (prevOutput) => `${prevOutput}\n$ ${command} ${args.join(' ')}\nCommand not found`
-      )
-    }
-  }
+const printColoredMessage = (terminal, message, type) => {
+  const color = colors[type] || '37' // Default to white if unknown type
+  terminal.write(`\x1b[${color}m${message}\x1b[0m`)
+}
 
-  const announce = (message: string) => {
-    setTerminalMsg((prevOutput) => `${prevOutput}\n${message}`)
-  }
+const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg }) => {
+  const terminalRef = useRef(null)
+  const inputBufferRef = useRef('') // Tracks user input
 
   useEffect(() => {
-    announce('Welcome to the terminal!\n')
+    const terminal = new Terminal({
+      cursorBlink: true,
+      theme: {
+        background: '#101010',
+        foreground: '#ffffff'
+      },
+      fontFamily: 'Cascadia code, monospace',
+      fontSize: 13,
+      letterSpacing: 1
+    })
+
+    const fitAddon = new FitAddon()
+    terminal.loadAddon(fitAddon)
+    terminal.reset()
+
+    if (!terminalRef.current) return
+
+    terminal.open(terminalRef.current)
+    fitAddon.fit()
+
+    printColoredMessage(terminal, 'Information message', 'info')
+    printColoredMessage(terminal, 'Warning message', 'warning')
+    printColoredMessage(terminal, 'Error message', 'error')
+
+    const prompt = () => {
+      printColoredMessage(terminal, '\r\n$ ', 'blue')
+      inputBufferRef.current = '' // Clear input buffer after prompt
+    }
+
+    prompt()
+
+    terminal.onKey(({ key, domEvent }) => {
+      const inputBuffer = inputBufferRef.current
+
+      if (domEvent.key === 'Enter') {
+        // Handle commands on Enter
+        terminal.writeln('')
+        handleCommand(inputBuffer, terminal)
+        inputBufferRef.current = ''
+        prompt()
+      } else if (domEvent.key === 'Backspace') {
+        if (inputBuffer.length > 0) {
+          terminal.write('\b \b') // Remove the last character visually
+          inputBufferRef.current = inputBuffer.slice(0, -1) // Update the input buffer
+        }
+      } else {
+        terminal.write(key) // Echo the character
+        inputBufferRef.current += key // Add to input buffer
+      }
+    })
+
+    return () => terminal.dispose() // Cleanup on unmount
   }, [])
 
+  // Handle commands
+  const handleCommand = (input, terminal) => {
+    const trimmedInput = input.trim()
+
+    if (trimmedInput === 'clear') {
+      inputBufferRef.current = ''
+      input = ''
+      terminal.write('\x1b[H')
+      terminal.write('\x1b[2K\r')
+      terminal.clear()
+    } else if (trimmedInput === 'help') {
+      terminal.writeln('Available commands:')
+      terminal.writeln('clear - Clear the terminal')
+      terminal.writeln('help - Show this help message')
+    } else if (trimmedInput) {
+      terminal.writeln(`Unknown command: ${trimmedInput}`)
+    }
+  }
+
   return (
-    <>
-      <div className="pt-[20px] px-[20px] border-t border-border font-bold text-[14px]">
-        <div className="bg-background-dark rounded-t-md border-t border-x border-border py-[5px] px-[20px]">
-          Terminal
-        </div>
+    <div className="flex flex-col px-[20px]">
+      <div className="w-full font-bold py-[10px] pl-[20px] text-[14px] bg-background-dark rounded-t-md border-x border-t border-border">
+        Terminal
       </div>
-      <div className="h-[215px] mx-[20px] text-base border bg-background-dark border-border rounded-b-md overflow-hidden">
-        <ReactTerminal
-          commands={commands}
-          prompt={'$ '}
-          themes={{
-            'my-custom-theme': {
-              themeBGColor: '#101010', // Dark background color
-              themeToolbarColor: '#1E1E1E', // Dark top bar color
-              themeColor: '#FFFFFF', // Text color
-              themePromptColor: '#00FF00', // Prompt color
-              themeFontSize: '12px' // Font size
-            }
-          }}
-          theme="my-custom-theme"
-          showControlBar={false} // Remove the 3 dots in the top bar
-          onCommand={(command, args) => handleCommand(command, args)}
-          welcomeMessage={terminalMsg}
-        />
+
+      <div className="max-w-4xl h-[230px] pl-[10px] pr-[5px] pt-[10px] border border-border rounded-b-md bg-background-dark">
+        <div ref={terminalRef} className="w-full h-full" />
       </div>
-    </>
+    </div>
   )
 }
 
-export default Terminal
+export default TerminalBox
