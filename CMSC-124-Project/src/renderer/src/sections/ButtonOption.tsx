@@ -3,12 +3,15 @@ import { Button, buttonVariants } from '../components/index'
 import handleFileUpload from '@renderer/utils/fileUpload'
 import syntaxAnalyzer from '@renderer/utils/syntaxAnalyzer'
 import lexemeAnalyzer from '@renderer/utils/lexemeAnalyzer'
-import { Lexeme } from '@renderer/interfaces/interfaces'
+import semanticAnalyzer from '@renderer/utils/semanticAnalyzer'
+import { Lexeme, SymbolTableEntry } from '@renderer/interfaces/interfaces'
 import { Play } from 'lucide-react'
+import SymbolTable from './SymbolTable'
 
 interface ButtonOptionProps {
   text: string
   lexemes: Lexeme[]
+  symbolTable: Record<string, SymbolTableEntry>
   setText: React.Dispatch<React.SetStateAction<any>>
   setFileContent: React.Dispatch<React.SetStateAction<any>>
   setLexemes: React.Dispatch<React.SetStateAction<any>>
@@ -22,6 +25,7 @@ interface ButtonOptionProps {
 const ButtonOption: React.FC<ButtonOptionProps> = ({
   text,
   lexemes,
+  symbolTable,
   setText,
   setFileContent,
   setLexemes,
@@ -62,6 +66,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             onClick={() => {
               lexemeAnalyzer(text, setLexemes, SetLexemeErrors)
               syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable)
+              semanticAnalyzer(text, lexemes, symbolTable, SetSemanticsErrors)
             }}
           >
             <Play />

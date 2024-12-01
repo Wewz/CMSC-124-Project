@@ -25,6 +25,7 @@ function App(): JSX.Element {
           <ButtonOption
             text={text}
             lexemes={lexemes}
+            symbolTable={symbolTable}
             setText={setText}
             setFileContent={setFileContent}
             setLexemes={setLexemes}

@@ -1,10 +1,10 @@
-import { Lexeme } from '@renderer/interfaces/interfaces'
+import { Lexeme, SymbolTableEntry } from '@renderer/interfaces/interfaces'
 import { isLiteralOrIdentifier, extractConditionalBlock } from './analyzerHelperFunctions'
 
 const semanticAnalyzer = (
   content: string,
   lexemes: Lexeme[],
-  symbolTable: Record<string, string>,
+  symbolTable: Record<string, SymbolTableEntry>,
   setErrors: React.Dispatch<React.SetStateAction<any>>
 ) => {
   const errors: { error: string; line: number }[] = []
