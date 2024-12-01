@@ -49,4 +49,4 @@ const keywordClassifications: { [key: string]: string } = {
   'HOW IZ I': 'Function Call'
 }
 
-export { keywordClassifications };
+export { keywordClassifications }

@@ -9,9 +9,10 @@ import {
   TableRow
 } from '../components/index'
 import { Rabbit } from 'lucide-react'
+import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 
 interface SymbolTableProps {
-  symbolTable: Record<string, string>
+  symbolTable: Record<string, SymbolTableEntry>
 }
 
 const SymbolTable: React.FC<SymbolTableProps> = ({ symbolTable }) => {
@@ -40,7 +41,7 @@ const SymbolTable: React.FC<SymbolTableProps> = ({ symbolTable }) => {
                 {Object.entries(symbolTable).map(([identifier, value]) => (
                   <TableRow className="text-xs" key={identifier}>
                     <TableCell>{identifier}</TableCell>
-                    <TableCell>{value}</TableCell>
+                    <TableCell>{value.value}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

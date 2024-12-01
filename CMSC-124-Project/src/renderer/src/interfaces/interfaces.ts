@@ -1,7 +1,20 @@
+import { ReactNode } from 'react'
+
 interface Lexeme {
   lexeme: string
   classification: string
   position: number
 }
 
-export type { Lexeme };
+interface SymbolTableEntry {
+  existingProperty: ReactNode
+  type: string // e.g., NUMBR, NUMBAR, YARN, TROOF
+  value: any // Variable value (e.g., number, string, boolean, etc.)
+}
+
+interface ErrorType {
+  error: string
+  line: number
+}
+
+export type { Lexeme, SymbolTableEntry, ErrorType }

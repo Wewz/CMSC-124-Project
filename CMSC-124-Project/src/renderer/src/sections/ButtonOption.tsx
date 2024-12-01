@@ -1,26 +1,35 @@
 import React from 'react'
 import { Button, buttonVariants } from '../components/index'
 import handleFileUpload from '@renderer/utils/fileUpload'
-import processFileContent from '@renderer/utils/lexemeAnalyzer'
 import syntaxAnalyzer from '@renderer/utils/syntaxAnalyzer'
+import lexemeAnalyzer from '@renderer/utils/lexemeAnalyzer'
+import { Lexeme } from '@renderer/interfaces/interfaces'
 import { Play } from 'lucide-react'
 
 interface ButtonOptionProps {
   text: string
+  lexemes: Lexeme[]
   setText: React.Dispatch<React.SetStateAction<any>>
   setFileContent: React.Dispatch<React.SetStateAction<any>>
   setLexemes: React.Dispatch<React.SetStateAction<any>>
   setSymbolTable: React.Dispatch<React.SetStateAction<any>>
   setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
+  SetLexemeErrors: React.Dispatch<React.SetStateAction<any>>
+  SetSyntaxErrors: React.Dispatch<React.SetStateAction<any>>
+  SetSemanticsErrors: React.Dispatch<React.SetStateAction<any>>
 }
 
 const ButtonOption: React.FC<ButtonOptionProps> = ({
   text,
+  lexemes,
   setText,
   setFileContent,
   setLexemes,
   setSymbolTable,
-  setTerminalMsg
+  setTerminalMsg,
+  SetLexemeErrors,
+  SetSyntaxErrors,
+  SetSemanticsErrors
 }) => {
   return (
     <>
@@ -51,8 +60,8 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             className="font-bold"
             variant={'outline'}
             onClick={() => {
-              processFileContent(text, setLexemes, setSymbolTable, setTerminalMsg)
-              syntaxAnalyzer(text, setSymbolTable)
+              lexemeAnalyzer(text, setLexemes, SetLexemeErrors)
+              syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable)
             }}
           >
             <Play />

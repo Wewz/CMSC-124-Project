@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Lexeme } from './interfaces/interfaces'
+import { Lexeme, SymbolTableEntry, ErrorType } from './interfaces/interfaces'
 import TextEditor from './sections/TextEditor'
 import ButtonOption from './sections/ButtonOption'
 import LexemeTable from './sections/LexemeTable'
@@ -10,8 +10,12 @@ function App(): JSX.Element {
   const [text, setText] = useState('')
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [lexemes, setLexemes] = useState<Lexeme[]>([])
-  const [symbolTable, setSymbolTable] = useState<Record<string, string>>({})
+  const [symbolTable, setSymbolTable] = useState<Record<string, SymbolTableEntry>>({}) // const localSymbolTable: Record<string, SymbolTableEntry> = {}
   const [terminalMsg, setTerminalMsg] = useState<string>('')
+
+  const [lexemeErrors, SetLexemeErrors] = useState<ErrorType[]>([])
+  const [syntaxErrors, SetSyntaxErrors] = useState<ErrorType[]>([])
+  const [semanticsErrors, SetSemanticsErrors] = useState<ErrorType[]>([])
 
   return (
     <div className="flex h-full">
@@ -20,11 +24,15 @@ function App(): JSX.Element {
           {/* Button options above */}
           <ButtonOption
             text={text}
+            lexemes={lexemes}
             setText={setText}
             setFileContent={setFileContent}
             setLexemes={setLexemes}
             setSymbolTable={setSymbolTable}
             setTerminalMsg={setTerminalMsg}
+            SetLexemeErrors={SetLexemeErrors}
+            SetSyntaxErrors={SetSyntaxErrors}
+            SetSemanticsErrors={SetSemanticsErrors}
           />
 
           {/* Text Editor */}
