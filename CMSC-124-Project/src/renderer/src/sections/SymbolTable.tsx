@@ -38,10 +38,16 @@ const SymbolTable: React.FC<SymbolTableProps> = ({ symbolTable }) => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {Object.entries(symbolTable).map(([identifier, value]) => (
+                {Object.entries(symbolTable).map(([identifier, entry]) => (
                   <TableRow className="text-xs" key={identifier}>
                     <TableCell>{identifier}</TableCell>
-                    <TableCell>{value.value}</TableCell>
+                    <TableCell>
+                      {entry.type.localeCompare('TROOF') === 0
+                        ? entry.value
+                          ? 'WIN'
+                          : 'FAIL'
+                        : entry.value}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
