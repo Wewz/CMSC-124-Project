@@ -33,7 +33,8 @@ const printError = (
   terminal: Terminal,
   message: string
 ) => {
-  printColoredMessage(terminal, message, 'error')
+  // printColoredMessage(terminal, message, 'error')
+  terminal.write(`\x1b[${colors.error}m${message}\x1b[0m\r\n`)
 }
 
 const handleCommand = (
@@ -69,7 +70,7 @@ const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg, cle
           printError(
             inputBufferRef,
             terminalInstanceRef.current!,
-            `\r\nError in Line ${line}: ${error}`
+            `Error in Line ${line}: ${error}`
           ),
         (inputBufferRef.current = '')
       )
