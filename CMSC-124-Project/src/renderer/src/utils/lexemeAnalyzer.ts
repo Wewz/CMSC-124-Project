@@ -27,14 +27,18 @@ const lexemeAnalyzer = (
     .replace(/BTW.*/g, '')
 
   let match
+  const seenLexemes = new Set<string>()
 
   // Match keywords
   while ((match = keywords.exec(sanitizedContent)) !== null) {
-    lexemeData.push({
-      lexeme: match[0],
-      classification: keywordClassifications[match[0]] || 'Keyword',
-      position: match.index
-    })
+    if (!seenLexemes.has(match[0])) {
+      lexemeData.push({
+        lexeme: match[0],
+        classification: keywordClassifications[match[0]] || 'Keyword',
+        position: match.index
+      })
+      seenLexemes.add(match[0])
+    }
     for (let i = match.index; i < match.index + match[0].length; i++) {
       keywordPositions.add(i)
     }
@@ -42,15 +46,18 @@ const lexemeAnalyzer = (
 
   // Match string literals
   while ((match = stringPattern.exec(sanitizedContent)) !== null) {
-    lexemeData.push(
-      { lexeme: match[1], classification: 'Opening Quote', position: match.index },
-      { lexeme: match[2], classification: 'Literal', position: match.index + match[1].length },
-      {
-        lexeme: match[3],
-        classification: 'Closing Quote',
-        position: match.index + match[0].length - 1
-      }
-    )
+    if (!seenLexemes.has(match[0])) {
+      lexemeData.push(
+        { lexeme: match[1], classification: 'Opening Quote', position: match.index },
+        { lexeme: match[2], classification: 'Literal', position: match.index + match[1].length },
+        {
+          lexeme: match[3],
+          classification: 'Closing Quote',
+          position: match.index + match[0].length - 1
+        }
+      )
+      seenLexemes.add(match[0])
+    }
     for (let i = match.index; i < match.index + match[0].length; i++) {
       literalPositions.add(i)
     }
@@ -58,15 +65,21 @@ const lexemeAnalyzer = (
 
   // Match numbers
   while ((match = numberPattern.exec(sanitizedContent)) !== null) {
-    lexemeData.push({ lexeme: match[0], classification: 'Literal', position: match.index })
+    if (!seenLexemes.has(match[0])) {
+      lexemeData.push({ lexeme: match[0], classification: 'Literal', position: match.index })
+      seenLexemes.add(match[0])
+    }
     for (let i = match.index; i < match.index + match[0].length; i++) {
       literalPositions.add(i)
     }
   }
 
-  // Match operators (+, -, *, /, etc.)
+  // Match operators
   while ((match = operatorPattern.exec(sanitizedContent)) !== null) {
-    lexemeData.push({ lexeme: match[0], classification: 'Operator', position: match.index })
+    if (!seenLexemes.has(match[0])) {
+      lexemeData.push({ lexeme: match[0], classification: 'Operator', position: match.index })
+      seenLexemes.add(match[0])
+    }
   }
 
   // Match identifiers
@@ -76,8 +89,9 @@ const lexemeAnalyzer = (
       (pos) => keywordPositions.has(pos) || literalPositions.has(pos)
     )
 
-    if (!overlaps) {
+    if (!overlaps && !seenLexemes.has(match[0])) {
       lexemeData.push({ lexeme: match[0], classification: 'Identifier', position: match.index })
+      seenLexemes.add(match[0])
     }
   }
 
@@ -91,7 +105,7 @@ const lexemeAnalyzer = (
     parts.forEach((part) => {
       if (part.match(stringPattern)) {
         const stringMatch = stringPattern.exec(part)
-        if (stringMatch) {
+        if (stringMatch && !seenLexemes.has(stringMatch[0])) {
           lexemeData.push(
             {
               lexeme: stringMatch[1],
@@ -109,19 +123,26 @@ const lexemeAnalyzer = (
               position: stringMatch.index + stringMatch[0].length - 1
             }
           )
+          seenLexemes.add(stringMatch[0])
         }
       } else if (part.match(identifierPattern)) {
-        lexemeData.push({
-          lexeme: part.trim(),
-          classification: 'Identifier',
-          position: match.index
-        })
+        if (!seenLexemes.has(part.trim())) {
+          lexemeData.push({
+            lexeme: part.trim(),
+            classification: 'Identifier',
+            position: match.index
+          })
+          seenLexemes.add(part.trim())
+        }
       } else if (part.match(numberPattern)) {
-        lexemeData.push({
-          lexeme: part.trim(),
-          classification: 'Literal',
-          position: match.index
-        })
+        if (!seenLexemes.has(part.trim())) {
+          lexemeData.push({
+            lexeme: part.trim(),
+            classification: 'Literal',
+            position: match.index
+          })
+          seenLexemes.add(part.trim())
+        }
       }
     })
   }

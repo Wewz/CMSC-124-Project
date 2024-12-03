@@ -40,7 +40,7 @@ const keywordClassifications: { [key: string]: string } = {
   DIFFRINT: 'Logical Operator',
   SMOOSH: 'Logical Operator',
   MAEK: 'Logical Operator',
-  A: 'Logical Operator',
+  AN: 'Logical Operator',
   'IS NOW A': 'Logical Operator',
   MKAY: 'Logical Operator',
   'IF U SAY SO': 'Exit',

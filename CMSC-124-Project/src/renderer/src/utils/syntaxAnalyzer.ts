@@ -79,6 +79,8 @@ const syntaxAnalyzer = (
         const variable = match[1]
         const value = match[2]
 
+        console.log('variable declarations', match)
+
         if (localSymbolTable[variable]) {
           errors.push({
             error: `Duplicate variable declaration: "${variable}"`,
@@ -93,7 +95,13 @@ const syntaxAnalyzer = (
             type = evalResult.type
             resolvedValue = evalResult.value
 
-            localSymbolTable[variable] = { type, value: resolvedValue, existingProperty: null }
+            console.log('Returened Value', evalResult)
+
+            localSymbolTable[variable] = {
+              type: type,
+              value: resolvedValue,
+              existingProperty: null
+            }
           } else {
             // Handle case where no initial value is provided
             localSymbolTable[variable] = { type: 'NOOB', value: 'NOOB', existingProperty: null }
