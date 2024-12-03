@@ -35,11 +35,14 @@ const evaluateExpression = (
   lineNumber: number,
   errors: { error: string; line: number }[]
 ): { type: string; value: any } => {
+  console.log('Current Expression', expression)
+
   // Check for literals
   if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
   if (/^-?\d+\.\d+$/.test(expression)) return { type: 'NUMBAR', value: parseFloat(expression) }
-  if (/^".*"$/.test(expression)) return { type: 'YARN', value: expression.slice(1, -1) }
   if (/^(WIN|FAIL)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
+  if (/^(true|false)$/.test(expression)) return { type: 'TROOF', value: expression === 'true' }
+  if (/^".*"$/.test(expression)) return { type: 'YARN', value: expression.slice(1, -1) }
 
   // Check for valid variable
   if (symbolTable[expression]) {
@@ -47,248 +50,104 @@ const evaluateExpression = (
     return { type: variable.type, value: variable.value }
   }
 
-  // Handle arithmetic expressions
-  if (/^SUM OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^SUM OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+  let currentExpression = expression
+  let matched = false
 
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        return { type: 'NUMBR', value: left.value + right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for SUM OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
+  // Arithmetic patterns for various operations
+  const arithmeticPatterns = [
+    { pattern: /SUM OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a + b, type: 'NUMBR' },
+    { pattern: /DIFF OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a - b, type: 'NUMBR' },
+    { pattern: /PRODUKT OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a * b, type: 'NUMBR' },
+    { pattern: /QUOSHUNT OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a / b, type: 'NUMBR' },
+    { pattern: /MOD OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a % b, type: 'NUMBR' },
+    { pattern: /BIGGR OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => Math.max(a, b), type: 'NUMBR' },
+    { pattern: /SMALLR OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => Math.min(a, b), type: 'NUMBR' }
+  ]
 
-  // Add support for other operations (e.g., DIFF OF, PRODUKT OF, etc.)
-  if (/^DIFF OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^DIFF OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+  const patternsKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /BOTH/, /DIFFRINT/]
 
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        return { type: 'NUMBR', value: left.value - right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for DIFF OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
+  // Logical patterns
+  const logicalPatterns = [
+    { pattern: /BOTH OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a && b },
+    { pattern: /EITHER OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a || b },
+    { pattern: /WON OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a !== b },
+    { pattern: /NOT (\w+)/, operation: (a, b) => !a },
+    { pattern: /^ALL OF (\w+)\s+AN\s+(\w+) (.+) MKAY/, operation: (a, b) => a && b },
+    { pattern: /^ANY OF (\w+)\s+AN\s+(\w+) (.+) MKAY/, operation: (a, b) => a || b }
+  ]
 
-  if (/^PRODUKT OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^PRODUKT OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+  // Comparison patterns
+  const comparisonPatterns = [
+    { pattern: /BOTH SAEM (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a === b },
+    { pattern: /DIFFRINT(\w+)\s+AN\s+(\w+)/, operation: (a, b) => a !== b }
+  ]
 
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        return { type: 'NUMBR', value: left.value * right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for PRODUKT OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
+  // Recursive evaluation for arithmetic, logical, and comparison operations
+  const recursiveEvaluation = (patterns: any[], patternsKeywords: any[]) => {
+    do {
+      matched = false
+      for (const { pattern, operation } of patterns) {
+        const match = currentExpression.match(pattern)
+        if (match) {
+          matched = true
 
-  if (/^QUOSHUNT OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^QUOSHUNT OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+          console.log('Matched Expression', match)
 
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        if (right.value === 0) {
-          errors.push({
-            error: `Division by zero in QUOSHUNT OF`,
-            line: lineNumber
-          })
-          return { type: 'ERROR', value: null }
+          if (patternsKeywords.some((keyword) => match[1].includes(keyword.source))) {
+            matched = false
+            continue
+          }
+
+          if (patternsKeywords.some((keyword) => match[2]?.includes(keyword.source))) {
+            matched = false
+            continue
+          }
+
+          const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
+          const right = match[2]
+            ? evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+            : null
+
+          // Type validation
+          if (
+            (patterns === arithmeticPatterns &&
+              left.type === 'NUMBR' &&
+              right &&
+              right.type === 'NUMBR') ||
+            (patterns === logicalPatterns &&
+              left.type === 'TROOF' &&
+              (!right || right.type === 'TROOF')) ||
+            (patterns === comparisonPatterns && right && left.type === right.type)
+          ) {
+            const result = operation(left.value, right ? right.value : undefined)
+            currentExpression = currentExpression.replace(match[0], result.toString())
+          } else {
+            const patternName =
+              patterns === logicalPatterns
+                ? 'logical'
+                : patterns === comparisonPatterns
+                  ? 'comparison'
+                  : 'arithmetic'
+            errors.push({
+              error: `Invalid operands for ${patternName} operation: "${match[0]}"`,
+              line: lineNumber
+            })
+            console.log('Invalid operators', match)
+            return { type: 'ERROR', value: null }
+          }
         }
-        return { type: 'NUMBR', value: Math.floor(left.value / right.value) }
-      } else {
-        errors.push({
-          error: `Invalid operands for QUOSHUNT OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
       }
-    }
+    } while (matched)
   }
 
-  if (/^MOD OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^MOD OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+  // Perform recursive evaluation for each type of operation
+  recursiveEvaluation(arithmeticPatterns, [])
+  recursiveEvaluation(logicalPatterns, patternsKeywords)
+  recursiveEvaluation(comparisonPatterns, patternsKeywords)
 
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        return { type: 'NUMBR', value: left.value % right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for MOD OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  if (/^BIGGR OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^BIGGR OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        return { type: 'NUMBR', value: Math.max(left.value, right.value) }
-      } else {
-        errors.push({
-          error: `Invalid operands for BIGGR OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  if (/^SMALLR OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^SMALLR OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === 'NUMBR' && right.type === 'NUMBR') {
-        return { type: 'NUMBR', value: Math.min(left.value, right.value) }
-      } else {
-        errors.push({
-          error: `Invalid operands for SMALLR OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  // Logical operators
-  if (/^BOTH OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^BOTH OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === 'TROOF' && right.type === 'TROOF') {
-        return { type: 'TROOF', value: left.value && right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for BOTH OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  if (/^EITHER OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^EITHER OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === 'TROOF' && right.type === 'TROOF') {
-        return { type: 'TROOF', value: left.value || right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for EITHER OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  if (/^WON OF .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^WON OF (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === 'TROOF' && right.type === 'TROOF') {
-        return { type: 'TROOF', value: left.value !== right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for WON OF: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  if (/^NOT OF .+$/.test(expression)) {
-    const match = expression.match(/^NOT OF (.+)$/)
-    if (match) {
-      const operand = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-
-      if (operand.type === 'TROOF') {
-        return { type: 'TROOF', value: !operand.value }
-      } else {
-        errors.push({
-          error: `Invalid operand for NOT OF: "${operand.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  // Comparison operators
-  if (/^BOTH SAEM .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^BOTH SAEM (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === right.type) {
-        return { type: 'TROOF', value: left.value === right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for BOTH SAEM: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
-  }
-
-  if (/^DIFFRINT .+ AN .+$/.test(expression)) {
-    const match = expression.match(/^DIFFRINT (.+) AN (.+)$/)
-    if (match) {
-      const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
-      const right = evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
-
-      if (left.type === right.type) {
-        return { type: 'TROOF', value: left.value !== right.value }
-      } else {
-        errors.push({
-          error: `Invalid operands for DIFFRINT: "${left.type}" and "${right.type}"`,
-          line: lineNumber
-        })
-        return { type: 'ERROR', value: null }
-      }
-    }
+  // If no valid expression resolved
+  if (currentExpression !== expression) {
+    return evaluateExpression(currentExpression, symbolTable, lineNumber, errors)
   }
 
   // Invalid expression

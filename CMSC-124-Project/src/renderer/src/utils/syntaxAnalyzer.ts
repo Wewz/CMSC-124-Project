@@ -13,6 +13,9 @@ const syntaxAnalyzer = (
   let insideConditional = false
   let insideLoop = false
   let insideFunction = false
+  let insideWazzup = false
+  let foundHai = false
+  let foundWazzup = false
 
   lines.forEach((line, lineNumber) => {
     const trimmedLine = line.trim()
@@ -22,12 +25,48 @@ const syntaxAnalyzer = (
 
     /*** PROGRAM STRUCTURE ***/
     // Program Start
-    if (/^HAI$/.test(trimmedLine)) return
+    if (/^HAI$/.test(trimmedLine)) {
+      foundHai = true
+      return
+    }
     // Program End
     if (/^KTHXBYE$/.test(trimmedLine)) return
 
+    /*** WAZZUP BLOCK ***/
+    if (/^WAZZUP$/.test(trimmedLine)) {
+      insideWazzup = true
+      if (!foundHai || foundWazzup) {
+        errors.push({
+          error: `'WAZZUP' must be immediately after 'HAI' and only once`,
+          line: lineNumber + 1
+        })
+      } else {
+        foundWazzup = true
+      }
+      return
+    }
+    if (/^BUHBYE$/.test(trimmedLine)) {
+      if (!insideWazzup) {
+        errors.push({
+          error: `'BUHBYE' found outside of a WAZZUP block`,
+          line: lineNumber + 1
+        })
+      } else {
+        insideWazzup = false
+      }
+      return
+    }
+
     /*** VARIABLE DECLARATIONS ***/
     if (/^I HAS A /.test(trimmedLine)) {
+      if (!insideWazzup) {
+        errors.push({
+          error: `Variable declaration outside of WAZZUP block: "${trimmedLine}"`,
+          line: lineNumber + 1
+        })
+        return
+      }
+
       const match = trimmedLine.match(/^I HAS A ([A-Za-z][A-Za-z0-9_]*)(?: ITZ (.+))?$/)
       if (match) {
         const variable = match[1]
@@ -66,23 +105,29 @@ const syntaxAnalyzer = (
         const variable = match[1]
         const value = match[2]
 
+        // Check if the variable is declared
         if (!localSymbolTable[variable]) {
           errors.push({
             error: `Undeclared variable used in assignment: "${variable}"`,
             line: lineNumber + 1
           })
         } else {
+          // Evaluate the value
           const evalResult = evaluateExpression(value, localSymbolTable, lineNumber + 1, errors)
           const expectedType = localSymbolTable[variable].type
 
+          // Check for type mismatch
           if (expectedType !== 'UNDEFINED' && evalResult.type !== expectedType) {
             errors.push({
               error: `Type mismatch in assignment to "${variable}". Expected: ${expectedType}, Got: ${evalResult.type}`,
               line: lineNumber + 1
             })
           } else {
+            // Update the variable's value and type
             localSymbolTable[variable].value = evalResult.value
             localSymbolTable[variable].type = evalResult.type
+
+            console.log('Update Var', evalResult)
           }
         }
       }
@@ -94,12 +139,29 @@ const syntaxAnalyzer = (
       const match = trimmedLine.match(/^VISIBLE (.+)$/)
       if (match) {
         const outputExpr = match[1].trim()
-        if (!isLiteralOrIdentifier(outputExpr, new Set(Object.keys(localSymbolTable)))) {
-          errors.push({
-            error: `Invalid output expression: "${outputExpr}"`,
-            line: lineNumber + 1
-          })
+        const parts = outputExpr.split(/(?<!\\)\+/).map((part) => part.trim()) // Split by unescaped plus signs
+
+        let outputResult = ''
+
+        for (const part of parts) {
+          try {
+            // Check if the part is a literal string
+            if (/^".*"$/.test(part)) {
+              outputResult += part.slice(1, -1) // Remove the surrounding quotes
+            } else {
+              const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors)
+              outputResult += evalResult.value.toString() // Cast to YARN
+            }
+          } catch (error) {
+            errors.push({
+              error: `Invalid output expression: "${part}"`,
+              line: lineNumber + 1
+            })
+            return
+          }
         }
+
+        console.log('Output the evaluated result', outputResult + '\n') // Output the evaluated result with a new line
       }
       return
     }
@@ -124,28 +186,10 @@ const syntaxAnalyzer = (
       insideConditional = true
       return
     }
-    if (/^YA RLY$/.test(trimmedLine)) {
+    if (/^(YA RLY|MEBBE .+|NO WAI)$/.test(trimmedLine)) {
       if (!insideConditional) {
         errors.push({
-          error: `'YA RLY' found outside of a conditional block`,
-          line: lineNumber + 1
-        })
-      }
-      return
-    }
-    if (/^MEBBE .+$/.test(trimmedLine)) {
-      if (!insideConditional) {
-        errors.push({
-          error: `'MEBBE' found outside of a conditional block`,
-          line: lineNumber + 1
-        })
-      }
-      return
-    }
-    if (/^NO WAI$/.test(trimmedLine)) {
-      if (!insideConditional) {
-        errors.push({
-          error: `'NO WAI' found outside of a conditional block`,
+          error: `'${trimmedLine}' found outside of a conditional block`,
           line: lineNumber + 1
         })
       }
@@ -209,6 +253,29 @@ const syntaxAnalyzer = (
       return
     }
 
+    /*** TYPE CASTING WITH MAEK ***/
+    if (/^MAEK /.test(trimmedLine)) {
+      const match = trimmedLine.match(/^MAEK (.+) A (NOOB|NUMBR|NUMBAR|YARN|TROOF)$/)
+      if (match) {
+        const value = match[1]
+        const targetType = match[2]
+        if (!isLiteralOrIdentifier(value, new Set(Object.keys(localSymbolTable)))) {
+          errors.push({
+            error: `Invalid value for type casting: "${value}"`,
+            line: lineNumber + 1
+          })
+        } else {
+          // Handle type casting logic here if needed
+        }
+      } else {
+        errors.push({
+          error: `Invalid type casting syntax: "${trimmedLine}"`,
+          line: lineNumber + 1
+        })
+      }
+      return
+    }
+
     /*** SWITCH CASES ***/
     if (/^WTF\?$/.test(trimmedLine)) {
       return
@@ -244,7 +311,7 @@ const syntaxAnalyzer = (
     })
   }
 
-  console.log('Syntax Errors', errors)
+  console.log('Syntax and Semantic Errors', errors)
 
   // Update symbol table state
   setSymbolTable(localSymbolTable)

@@ -66,7 +66,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             onClick={() => {
               lexemeAnalyzer(text, setLexemes, SetLexemeErrors)
               syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable)
-              semanticAnalyzer(text, lexemes, symbolTable, SetSemanticsErrors)
+              // semanticAnalyzer(text, lexemes, symbolTable, setSymbolTable, SetSemanticsErrors)
             }}
           >
             <Play />
