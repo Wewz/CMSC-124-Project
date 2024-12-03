@@ -18,10 +18,17 @@ const syntaxAnalyzer = (
   let foundWazzup = false
 
   lines.forEach((line, lineNumber) => {
-    const trimmedLine = line.trim()
+    const trimmedLine = line
+      .replace(/"([^"]*)"|BTW.*/g, (match, string) => {
+        // Ignore inline comments after `BTW` but preserve the strings before it
+        if (string !== undefined) return `"${string}"` // Preserve string literals
+        return '' // Remove the comment part
+      })
+      .trim()
 
     // Skip empty lines and comments
-    if (!trimmedLine || /^BTW/.test(trimmedLine) || /^OBTW[\s\S]*?TLDR$/.test(trimmedLine)) return
+    // if (!trimmedLine || /^BTW/.test(trimmedLine) || /^OBTW[\s\S]*?TLDR$/.test(trimmedLine)) return
+    if (!trimmedLine) return
 
     /*** PROGRAM STRUCTURE ***/
     // Program Start
@@ -78,16 +85,19 @@ const syntaxAnalyzer = (
             line: lineNumber + 1
           })
         } else {
-          let type: string = 'UNDEFINED'
-          let resolvedValue: any = null
-
           if (value) {
+            let type: string = 'UNDEFINED'
+            let resolvedValue: any = null
+
             const evalResult = evaluateExpression(value, localSymbolTable, lineNumber + 1, errors)
             type = evalResult.type
             resolvedValue = evalResult.value
-          }
 
-          localSymbolTable[variable] = { type, value: resolvedValue, existingProperty: null }
+            localSymbolTable[variable] = { type, value: resolvedValue, existingProperty: null }
+          } else {
+            // Handle case where no initial value is provided
+            localSymbolTable[variable] = { type: 'NOOB', value: 'NOOB', existingProperty: null }
+          }
         }
       } else {
         errors.push({
@@ -127,7 +137,7 @@ const syntaxAnalyzer = (
             localSymbolTable[variable].value = evalResult.value
             localSymbolTable[variable].type = evalResult.type
 
-            console.log('Update Var', evalResult)
+            console.log('Updated Variable', evalResult)
           }
         }
       }

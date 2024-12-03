@@ -64,8 +64,6 @@ const evaluateExpression = (
     { pattern: /SMALLR OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => Math.min(a, b), type: 'NUMBR' }
   ]
 
-  const patternsKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /BOTH/, /DIFFRINT/]
-
   // Logical patterns
   const logicalPatterns = [
     { pattern: /BOTH OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a && b },
@@ -81,6 +79,10 @@ const evaluateExpression = (
     { pattern: /BOTH SAEM (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a === b },
     { pattern: /DIFFRINT(\w+)\s+AN\s+(\w+)/, operation: (a, b) => a !== b }
   ]
+
+  const arithmeticKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /BOTH/, /DIFFRINT/]
+  const logicalKeywords = [/SUM/, /DIFF/, /PRODUKT/, /QUOSHUNT/, /MOD/, /BIGGR/, /SMALLR/]
+  const comparisonKeywords = [/BOTH/, /DIFFRINT/]
 
   // Recursive evaluation for arithmetic, logical, and comparison operations
   const recursiveEvaluation = (patterns: any[], patternsKeywords: any[]) => {
@@ -141,9 +143,9 @@ const evaluateExpression = (
   }
 
   // Perform recursive evaluation for each type of operation
-  recursiveEvaluation(arithmeticPatterns, [])
-  recursiveEvaluation(logicalPatterns, patternsKeywords)
-  recursiveEvaluation(comparisonPatterns, patternsKeywords)
+  recursiveEvaluation(arithmeticPatterns, arithmeticKeywords)
+  recursiveEvaluation(logicalPatterns, logicalKeywords)
+  recursiveEvaluation(comparisonPatterns, comparisonKeywords)
 
   // If no valid expression resolved
   if (currentExpression !== expression) {
