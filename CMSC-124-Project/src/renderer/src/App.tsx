@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Lexeme, SymbolTableEntry, ErrorType } from './interfaces/interfaces'
 import TextEditor from './sections/TextEditor'
 import ButtonOption from './sections/ButtonOption'
@@ -11,11 +11,26 @@ function App(): JSX.Element {
   const [fileContent, setFileContent] = useState<string | null>(null)
   const [lexemes, setLexemes] = useState<Lexeme[]>([])
   const [symbolTable, setSymbolTable] = useState<Record<string, SymbolTableEntry>>({}) // const localSymbolTable: Record<string, SymbolTableEntry> = {}
-  const [terminalMsg, setTerminalMsg] = useState<string>('')
+  const [terminalMsg, setTerminalMsg] = useState<ErrorType[]>([])
 
   const [lexemeErrors, SetLexemeErrors] = useState<ErrorType[]>([])
   const [syntaxErrors, SetSyntaxErrors] = useState<ErrorType[]>([])
   const [semanticsErrors, SetSemanticsErrors] = useState<ErrorType[]>([])
+  const [clear, setClear] = useState<boolean>(false)
+
+  useEffect(() => {
+    if (lexemeErrors.length > 0) {
+      console.log('Lexeme Errors', lexemeErrors)
+      setTerminalMsg((prevMsg) => [...prevMsg, ...lexemeErrors])
+    }
+  }, [lexemeErrors])
+
+  useEffect(() => {
+    if (syntaxErrors.length > 0) {
+      console.log('Syntax Errors', syntaxErrors)
+      setTerminalMsg((prevMsg) => [...prevMsg, ...syntaxErrors])
+    }
+  }, [syntaxErrors])
 
   return (
     <div className="flex h-full">
@@ -34,6 +49,7 @@ function App(): JSX.Element {
             SetLexemeErrors={SetLexemeErrors}
             SetSyntaxErrors={SetSyntaxErrors}
             SetSemanticsErrors={SetSemanticsErrors}
+            setClear={setClear}
           />
 
           {/* Text Editor */}
@@ -43,7 +59,12 @@ function App(): JSX.Element {
         </div>
 
         {/* Terminal */}
-        <TerminalBox terminalMsg={terminalMsg} setTerminalMsg={setTerminalMsg} />
+        <TerminalBox
+          terminalMsg={terminalMsg}
+          setTerminalMsg={setTerminalMsg}
+          clear={clear}
+          setClear={setClear}
+        />
       </div>
 
       <div className="flex-col gap-3 w-[40%] h-[860px] border-l border-inherit">

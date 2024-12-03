@@ -335,7 +335,7 @@ const syntaxAnalyzer = (
   setSymbolTable(localSymbolTable)
 
   // Push errors to the state
-  setErrors((prevErrors) => [...prevErrors, ...errors])
+  setErrors(errors)
 }
 
 export default syntaxAnalyzer

@@ -20,6 +20,7 @@ interface ButtonOptionProps {
   SetLexemeErrors: React.Dispatch<React.SetStateAction<any>>
   SetSyntaxErrors: React.Dispatch<React.SetStateAction<any>>
   SetSemanticsErrors: React.Dispatch<React.SetStateAction<any>>
+  setClear: React.Dispatch<React.SetStateAction<any>>
 }
 
 const ButtonOption: React.FC<ButtonOptionProps> = ({
@@ -33,7 +34,8 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
   setTerminalMsg,
   SetLexemeErrors,
   SetSyntaxErrors,
-  SetSemanticsErrors
+  SetSemanticsErrors,
+  setClear
 }) => {
   return (
     <>
@@ -64,9 +66,9 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             className="font-bold"
             variant={'outline'}
             onClick={() => {
+              setClear(true)
               lexemeAnalyzer(text, setLexemes, SetLexemeErrors)
               syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable)
-              // semanticAnalyzer(text, lexemes, symbolTable, setSymbolTable, SetSemanticsErrors)
             }}
           >
             <Play />
