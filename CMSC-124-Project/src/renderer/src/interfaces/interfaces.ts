@@ -10,6 +10,7 @@ interface SymbolTableEntry {
   existingProperty: ReactNode
   type: string // e.g., NUMBR, NUMBAR, YARN, TROOF
   value: any // Variable value (e.g., number, string, boolean, etc.)
+  args?: string[] // Function arguments
 }
 
 interface ErrorType {

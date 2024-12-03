@@ -3,13 +3,82 @@ import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 /*** Helper Functions ***/
 
 // Check if a value is a literal or a valid identifier
-const isLiteralOrIdentifier = (value: string, declaredVariables: Set<string>) => {
-  return (
-    /^-?\d+(\.\d+)?$/.test(value) || // Number literal
-    /^".*?"$/.test(value) || // String literal
-    /^(WIN|FAIL)$/.test(value) || // TROOF literal
-    declaredVariables.has(value) // Valid identifier
+const isLiteralOrIdentifier = (value: string, declaredVariables: Set<string>): boolean => {
+  // Check if the value is a number literal
+  if (/^-?\d+(\.\d+)?$/.test(value)) {
+    return true
+  }
+
+  // Check if the value is a string literal
+  if (/^".*?"$/.test(value)) {
+    return true
+  }
+
+  // Check if the value is a TROOF literal (WIN or FAIL)
+  if (/^(WIN|FAIL)$/.test(value)) {
+    return true
+  }
+
+  // Check if the value is a valid identifier (declared variable)
+  if (declaredVariables.has(value)) {
+    return true
+  }
+
+  // Check if the value is a complex expression
+  const match = value.match(
+    /^(SUM OF|PRODUKT OF|DIFF OF|BIGGR OF|SMALLR OF|QUOSHUNT OF|MOD OF|EITHER OF|BOTH OF|WON OF|NOT)\s+(.+)$/
   )
+  if (match) {
+    const operator = match[1]
+    const operandsStr = match[2].trim()
+
+    // Split operands for operators with "AN" as a separator
+    const splitOperands = (expression: string): string[] => {
+      const operands = []
+      let currentOperand = ''
+      let depth = 0
+
+      for (let i = 0; i < expression.length; i++) {
+        const char = expression[i]
+
+        // Detect nested expressions and adjust depth
+        if (
+          expression
+            .slice(i)
+            .match(
+              /^(SUM OF|PRODUKT OF|DIFF OF|BIGGR OF|SMALLR OF|QUOSHUNT OF|MOD OF|EITHER OF|BOTH OF|WON OF|NOT)/
+            )
+        ) {
+          depth++
+        }
+
+        // Split operands at " AN " when depth is 0 (not inside a nested expression)
+        if (char === ' ' && depth === 0 && expression.slice(i, i + 4) === ' AN ') {
+          operands.push(currentOperand.trim())
+          currentOperand = ''
+          i += 3 // Skip " AN "
+        } else {
+          currentOperand += char
+        }
+
+        // Adjust depth when closing a nested expression
+        if (depth > 0 && expression.slice(i, i + 3) === ' AN') {
+          depth--
+        }
+      }
+
+      if (currentOperand.trim()) operands.push(currentOperand.trim())
+      return operands
+    }
+
+    const operands = splitOperands(operandsStr)
+
+    // Recursively validate each operand
+    return operands.every((operand) => isLiteralOrIdentifier(operand, declaredVariables))
+  }
+
+  // If none of the conditions match, it's an invalid literal or identifier
+  return false
 }
 
 // Extract a conditional block to validate its structure
@@ -35,17 +104,18 @@ const evaluateExpression = (
   lineNumber: number,
   errors: { error: string; line: number }[]
 ): { type: string; value: any } => {
-  // Check for literals
-  if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
-  if (/^-?\d+\.\d+$/.test(expression)) return { type: 'NUMBAR', value: parseFloat(expression) }
-  if (/^".*"$/.test(expression)) return { type: 'YARN', value: expression.slice(1, -1) }
-  if (/^(WIN|FAIL)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
-
   // Check for valid variable
   if (symbolTable[expression]) {
     const variable = symbolTable[expression]
     return { type: variable.type, value: variable.value }
   }
+
+  // Check for literals
+  if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
+  if (/^-?\d+\.\d+$/.test(expression)) return { type: 'NUMBAR', value: parseFloat(expression) }
+  if (/^".*"$/.test(expression)) return { type: 'YARN', value: expression.slice(1, -1) }
+  if (/^(WIN)$/.test(expression)) return { type: 'TROOF', value: 'WIN' }
+  if (/^(FAIL)$/.test(expression)) return { type: 'TROOF', value: 'FAIL' }
 
   // Handle arithmetic expressions
   if (/^SUM OF .+ AN .+$/.test(expression)) {
