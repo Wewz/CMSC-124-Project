@@ -1,11 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
 interface contentProps {
-  text: string | null
+  text: string
 }
 
 const initialState: contentProps = {
-  text: null
+  text: ''
 }
 
 const contentSlice = createSlice({

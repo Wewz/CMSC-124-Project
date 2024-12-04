@@ -9,13 +9,12 @@ import {
   TableRow
 } from '../components/index'
 import { Rabbit } from 'lucide-react'
-import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
+import { useSelector } from 'react-redux'
+import { RootState } from '@renderer/store/store'
 
-interface SymbolTableProps {
-  symbolTable: Record<string, SymbolTableEntry>
-}
+const SymbolTable: React.FC = () => {
+  const symbolTable = useSelector((state: RootState) => state.symbolTable.symbolTable)
 
-const SymbolTable: React.FC<SymbolTableProps> = ({ symbolTable }) => {
   return (
     <>
       <div className="w-full h-[50%] px-[20px] pb-[20px]">

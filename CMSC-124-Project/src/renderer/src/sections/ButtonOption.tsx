@@ -1,40 +1,18 @@
 import React from 'react'
-import { Button, buttonVariants } from '../components/index'
 import handleFileUpload from '@renderer/utils/fileUpload'
 import syntaxAnalyzer from '@renderer/utils/syntaxAnalyzer'
 import lexemeAnalyzer from '@renderer/utils/lexemeAnalyzer'
-import semanticAnalyzer from '@renderer/utils/semanticAnalyzer'
-import { Lexeme, SymbolTableEntry } from '@renderer/interfaces/interfaces'
+import { Button, buttonVariants } from '../components/index'
 import { Play } from 'lucide-react'
-import SymbolTable from './SymbolTable'
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState, AppDispatch } from '@renderer/store/store'
+import { setTerminalMessage, setClearTerminal } from '@renderer/store/slices/terminalMessageSlice'
+import { setShowErrors, setClearErrors } from '@renderer/store/slices/errorSlice'
 
-interface ButtonOptionProps {
-  text: string
-  lexemes: Lexeme[]
-  symbolTable: Record<string, SymbolTableEntry>
-  setText: React.Dispatch<React.SetStateAction<any>>
-  setLexemes: React.Dispatch<React.SetStateAction<any>>
-  setSymbolTable: React.Dispatch<React.SetStateAction<any>>
-  setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
-  SetLexemeErrors: React.Dispatch<React.SetStateAction<any>>
-  SetSyntaxErrors: React.Dispatch<React.SetStateAction<any>>
-  SetSemanticsErrors: React.Dispatch<React.SetStateAction<any>>
-  setClear: React.Dispatch<React.SetStateAction<any>>
-}
+const ButtonOption: React.FC = () => {
+  const dispatch: AppDispatch = useDispatch()
+  const content = useSelector((state: RootState) => state.content.text)
 
-const ButtonOption: React.FC<ButtonOptionProps> = ({
-  text,
-  lexemes,
-  symbolTable,
-  setText,
-  setLexemes,
-  setSymbolTable,
-  setTerminalMsg,
-  SetLexemeErrors,
-  SetSyntaxErrors,
-  SetSemanticsErrors,
-  setClear
-}) => {
   return (
     <>
       <div className="flex justify-between">
@@ -50,7 +28,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             id="fileInput"
             className={buttonVariants({ variant: 'outline' })}
             type="file"
-            onChange={(e) => handleFileUpload(e, setText)}
+            onChange={(e) => handleFileUpload(e, dispatch)}
             style={{ display: 'none' }}
           />
 
@@ -64,9 +42,14 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             className="font-bold"
             variant={'outline'}
             onClick={() => {
-              setClear(true)
-              lexemeAnalyzer(text, setLexemes, SetLexemeErrors)
-              syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable)
+              dispatch(setClearErrors())
+              dispatch(setClearTerminal(true))
+              dispatch(setTerminalMessage({ message: 'Running LOLCODE', color: 'green' }))
+
+              lexemeAnalyzer(content, dispatch)
+              syntaxAnalyzer(content, dispatch)
+
+              dispatch(setShowErrors(true))
             }}
           >
             <Play />

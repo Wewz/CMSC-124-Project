@@ -8,14 +8,13 @@ import {
   TableHeader,
   TableRow
 } from '../components/index'
-import { Lexeme } from '@renderer/interfaces/interfaces'
 import { Bird } from 'lucide-react'
+import { useSelector } from 'react-redux'
+import { RootState } from '@renderer/store/store'
 
-interface LexemeTableProps {
-  lexemes: Lexeme[]
-}
+const LexemeTable: React.FC = () => {
+  const lexemes = useSelector((state: RootState) => state.lexemes.lexemes)
 
-const LexemeTable: React.FC<LexemeTableProps> = ({ lexemes }) => {
   return (
     <>
       <div className="w-full h-[50%] p-[20px]">

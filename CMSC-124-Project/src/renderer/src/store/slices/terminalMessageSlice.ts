@@ -1,23 +1,17 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { ErrorType } from '@renderer/interfaces/interfaces'
+
+interface messageProps {
+  message: string
+  color: string
+}
 
 interface terminalMessageProps {
-  errors: ErrorType[]
-  userInput: {
-    getInput: boolean
-    prompt: string
-    input: string
-  }
+  terminalMessage: messageProps[]
   clear: boolean
 }
 
 const initialState: terminalMessageProps = {
-  errors: [],
-  userInput: {
-    getInput: false,
-    prompt: '',
-    input: ''
-  },
+  terminalMessage: [],
   clear: false
 }
 
@@ -25,23 +19,19 @@ const terminalMessageSlice = createSlice({
   name: 'terminalMessage',
   initialState,
   reducers: {
-    setTerminalErrors(state, action: PayloadAction<ErrorType[]>) {
-      state.errors = action.payload
-    },
-    setGetInput(state, action: PayloadAction<{ getInput: boolean; prompt: string }>) {
-      state.userInput.getInput = action.payload.getInput
-      state.userInput.prompt = action.payload.prompt
-    },
-    setUserInput(state, action: PayloadAction<string>) {
-      state.userInput.input = action.payload
-    },
     setClearTerminal(state, action: PayloadAction<boolean>) {
       state.clear = action.payload
+    },
+    setTerminalMessage(state, action: PayloadAction<{ message: string; color: string }>) {
+      state.terminalMessage.push(action.payload)
+    },
+    setClearTerminalMessage(state) {
+      state.terminalMessage = []
     }
   }
 })
 
-export type { terminalMessageProps }
-export const { setTerminalErrors, setGetInput, setUserInput, setClearTerminal } =
+export type { terminalMessageProps, messageProps }
+export const { setClearTerminal, setTerminalMessage, setClearTerminalMessage } =
   terminalMessageSlice.actions
 export default terminalMessageSlice.reducer

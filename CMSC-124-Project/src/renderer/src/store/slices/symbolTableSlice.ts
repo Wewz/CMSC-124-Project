@@ -2,18 +2,18 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 
 interface symbolTableProps {
-  symbolTable: SymbolTableEntry[]
+  symbolTable: Record<string, SymbolTableEntry>
 }
 
 const initialState: symbolTableProps = {
-  symbolTable: []
+  symbolTable: {}
 }
 
 const symbolTableSlice = createSlice({
   name: 'symbolTable',
   initialState,
   reducers: {
-    setSymbolTable(state, action: PayloadAction<SymbolTableEntry[]>) {
+    setSymbolTable(state, action: PayloadAction<Record<string, SymbolTableEntry>>) {
       state.symbolTable = action.payload
     }
   }
