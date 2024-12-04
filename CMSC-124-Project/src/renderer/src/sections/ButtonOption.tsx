@@ -21,6 +21,7 @@ interface ButtonOptionProps {
   SetSyntaxErrors: React.Dispatch<React.SetStateAction<any>>
   SetSemanticsErrors: React.Dispatch<React.SetStateAction<any>>
   setClear: React.Dispatch<React.SetStateAction<any>>
+  setGimmehPrompt: React.Dispatch<React.SetStateAction<any>>
 }
 
 const ButtonOption: React.FC<ButtonOptionProps> = ({
@@ -35,7 +36,8 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
   SetLexemeErrors,
   SetSyntaxErrors,
   SetSemanticsErrors,
-  setClear
+  setClear,
+  setGimmehPrompt
 }) => {
   return (
     <>
@@ -68,7 +70,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             onClick={() => {
               setClear(true)
               lexemeAnalyzer(text, setLexemes, SetLexemeErrors)
-              syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable)
+              syntaxAnalyzer(text, SetSyntaxErrors, setSymbolTable, setGimmehPrompt)
             }}
           >
             <Play />

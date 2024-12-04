@@ -4,9 +4,12 @@ import { isLiteralOrIdentifier, evaluateExpression } from './analyzerHelperFunct
 const syntaxAnalyzer = (
   content: string,
   setErrors: React.Dispatch<React.SetStateAction<any>>,
-  setSymbolTable: React.Dispatch<React.SetStateAction<any>>
+  setSymbolTable: React.Dispatch<React.SetStateAction<any>>,
+  setGimmehPrompt: React.Dispatch<React.SetStateAction<string | null>>
 ) => {
   const errors: { error: string; line: number }[] = []
+  const declaredVariables = new Set<string>()
+  // const declaredFunctions = new Set<string>()
   const lines = content.split('\n')
   const localSymbolTable: Record<string, SymbolTableEntry> = {}
 
@@ -189,15 +192,20 @@ const syntaxAnalyzer = (
       const match = trimmedLine.match(/^GIMMEH ([A-Za-z][A-Za-z0-9_]*)$/)
       if (match) {
         const variable = match[1]
-        if (!localSymbolTable[variable]) {
+        if (!declaredVariables.has(variable)) {
           errors.push({
             error: `Undeclared variable used in input: "${variable}"`,
             line: lineNumber + 1
           })
         }
+
+        // Trigger the GIMMEH prompt in the terminal
+        setGimmehPrompt(variable) // Set the variable for the prompt
+
+        return
       }
-      return
     }
+    
 
     /*** CONDITIONAL STATEMENTS ***/
     if (/^O RLY\?$/.test(trimmedLine)) {
@@ -339,3 +347,11 @@ const syntaxAnalyzer = (
 }
 
 export default syntaxAnalyzer
+function setTerminalMsg(arg0: (prevMessages: any) => any[]) {
+  throw new Error('Function not implemented.');
+}
+
+function handleGimmehPrompt(variable: string) {
+  throw new Error('Function not implemented.');
+}
+

@@ -160,6 +160,7 @@ const lexemeAnalyzer = (
       !stringPattern.test(word) &&
       !numberPattern.test(word)
     ) {
+      console.log("hello")
       errors.push({ error: `Unrecognized token: "${word}"`, line: index + 1 })
     }
   })

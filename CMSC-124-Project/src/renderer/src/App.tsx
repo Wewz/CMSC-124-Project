@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, SetStateAction } from 'react'
 import { Lexeme, SymbolTableEntry, ErrorType } from './interfaces/interfaces'
 import TextEditor from './sections/TextEditor'
 import ButtonOption from './sections/ButtonOption'
@@ -32,6 +32,10 @@ function App(): JSX.Element {
     }
   }, [syntaxErrors])
 
+  function setGimmehPrompt(value: SetStateAction<string | null>): void {
+    throw new Error('Function not implemented.')
+  }
+
   return (
     <div className="flex h-full">
       <div className="w-[60%] h-full flex-col gap-3">
@@ -50,6 +54,7 @@ function App(): JSX.Element {
             SetSyntaxErrors={SetSyntaxErrors}
             SetSemanticsErrors={SetSemanticsErrors}
             setClear={setClear}
+            setGimmehPrompt={setGimmehPrompt}
           />
 
           {/* Text Editor */}
@@ -64,6 +69,7 @@ function App(): JSX.Element {
           setTerminalMsg={setTerminalMsg}
           clear={clear}
           setClear={setClear}
+          setGimmehPrompt={setGimmehPrompt}
         />
       </div>
 

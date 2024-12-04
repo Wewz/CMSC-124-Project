@@ -9,7 +9,9 @@ interface TerminalProps {
   setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
   clear: boolean
   setClear: React.Dispatch<React.SetStateAction<any>>
+  setGimmehPrompt: React.Dispatch<React.SetStateAction<string | null>> // Add this line
 }
+
 
 const colors = {
   info: '32', // Green
@@ -58,10 +60,13 @@ const handleCommand = (
   }
 }
 
-const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg, clear, setClear }) => {
+const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg, clear, setClear, setGimmehPrompt }) => {
   const terminalRef = useRef<HTMLDivElement | null>(null)
   const inputBufferRef = useRef('') // Tracks user input
   const terminalInstanceRef = useRef<Terminal | null>(null)
+
+  // New state to handle GIMMEH prompts
+  const [gimmehPrompt, setGimmehPromptState] = useState<string | null>(null)
 
   useEffect(() => {
     if (terminalInstanceRef.current && terminalMsg.length > 0) {
@@ -78,6 +83,14 @@ const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg, cle
       setTerminalMsg([]) // Clear messages after printing
     }
   }, [terminalMsg])
+
+  // Listen for GIMMEH prompt and display in terminal
+  useEffect(() => {
+    if (gimmehPrompt && terminalInstanceRef.current) {
+      printColoredMessage(terminalInstanceRef.current, `Please enter a value for "${gimmehPrompt}": `, 'blue')
+      setGimmehPromptState(null) // Reset the prompt after showing
+    }
+  }, [gimmehPrompt])
 
   useEffect(() => {
     if (terminalInstanceRef.current && clear) {
@@ -116,6 +129,13 @@ const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg, cle
       if (domEvent.key === 'Enter') {
         terminal.writeln('')
         handleCommand(inputBuffer, inputBufferRef, terminal)
+
+        if (gimmehPrompt) {
+          // Handle user input for GIMMEH
+          // Pass the input back to the analyzer or handle it however necessary
+          console.log(`User entered value for ${gimmehPrompt}: ${inputBuffer}`)
+        }
+
         inputBufferRef.current = ''
         prompt(terminal, inputBufferRef)
       } else if (domEvent.key === 'Backspace') {
@@ -150,5 +170,9 @@ const TerminalBox: React.FC<TerminalProps> = ({ terminalMsg, setTerminalMsg, cle
     </div>
   )
 }
+
+
+
+
 
 export default TerminalBox
