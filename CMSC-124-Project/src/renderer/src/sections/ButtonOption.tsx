@@ -13,7 +13,6 @@ interface ButtonOptionProps {
   lexemes: Lexeme[]
   symbolTable: Record<string, SymbolTableEntry>
   setText: React.Dispatch<React.SetStateAction<any>>
-  setFileContent: React.Dispatch<React.SetStateAction<any>>
   setLexemes: React.Dispatch<React.SetStateAction<any>>
   setSymbolTable: React.Dispatch<React.SetStateAction<any>>
   setTerminalMsg: React.Dispatch<React.SetStateAction<any>>
@@ -28,7 +27,6 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
   lexemes,
   symbolTable,
   setText,
-  setFileContent,
   setLexemes,
   setSymbolTable,
   setTerminalMsg,
@@ -52,7 +50,7 @@ const ButtonOption: React.FC<ButtonOptionProps> = ({
             id="fileInput"
             className={buttonVariants({ variant: 'outline' })}
             type="file"
-            onChange={(e) => handleFileUpload(e, setText, setFileContent)}
+            onChange={(e) => handleFileUpload(e, setText)}
             style={{ display: 'none' }}
           />
 

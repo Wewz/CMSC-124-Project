@@ -8,7 +8,6 @@ import TerminalBox from './sections/Terminal'
 
 function App(): JSX.Element {
   const [text, setText] = useState('')
-  const [fileContent, setFileContent] = useState<string | null>(null)
   const [lexemes, setLexemes] = useState<Lexeme[]>([])
   const [symbolTable, setSymbolTable] = useState<Record<string, SymbolTableEntry>>({}) // const localSymbolTable: Record<string, SymbolTableEntry> = {}
   const [terminalMsg, setTerminalMsg] = useState<ErrorType[]>([])
@@ -42,7 +41,6 @@ function App(): JSX.Element {
             lexemes={lexemes}
             symbolTable={symbolTable}
             setText={setText}
-            setFileContent={setFileContent}
             setLexemes={setLexemes}
             setSymbolTable={setSymbolTable}
             setTerminalMsg={setTerminalMsg}
