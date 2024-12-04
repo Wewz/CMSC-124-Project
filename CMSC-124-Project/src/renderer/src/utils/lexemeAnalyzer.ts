@@ -1,11 +1,10 @@
 import { keywordClassifications } from './constants'
 import { Lexeme } from '@renderer/interfaces/interfaces'
+import { AppDispatch } from '@renderer/store/store'
+import { setLexeme } from '@renderer/store/slices/lexemeSlice'
+import { setErrors } from '@renderer/store/slices/errorSlice'
 
-const lexemeAnalyzer = (
-  content: string,
-  setLexemes: React.Dispatch<React.SetStateAction<any>>,
-  setErrors: React.Dispatch<React.SetStateAction<any>>
-) => {
+const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
   const lexemeData: Lexeme[] = []
   const keywordPositions = new Set<number>()
   const literalPositions = new Set<number>()
@@ -165,8 +164,8 @@ const lexemeAnalyzer = (
   })
 
   lexemeData.sort((a, b) => a.position - b.position)
-  setLexemes(lexemeData)
-  setErrors(errors)
+  dispatch(setErrors(errors))
+  dispatch(setLexeme(lexemeData))
 }
 
 export default lexemeAnalyzer

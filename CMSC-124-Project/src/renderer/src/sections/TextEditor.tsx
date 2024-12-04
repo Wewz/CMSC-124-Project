@@ -1,6 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import CodeMirror from '@uiw/react-codemirror'
 import { createTheme } from '@uiw/codemirror-themes'
+import { useDispatch, useSelector } from 'react-redux'
+import { RootState, AppDispatch } from '@renderer/store/store'
+import { setContent } from '@renderer/store/slices/contentSlice'
 
 const myTheme = createTheme({
   theme: 'dark',
@@ -21,17 +24,9 @@ const myTheme = createTheme({
   styles: []
 })
 
-interface TextEditorProps {
-  text: string
-  setText: React.Dispatch<React.SetStateAction<string>>
-}
-
-const TextEditor: React.FC<TextEditorProps> = ({ text, setText }) => {
-  const [content, setContent] = useState<string>('')
-
-  useEffect(() => {
-    setContent(text)
-  }, [text])
+const TextEditor: React.FC = () => {
+  const dispatch: AppDispatch = useDispatch()
+  const content = useSelector((state: RootState) => state.content.text)
 
   return (
     <>
@@ -40,7 +35,7 @@ const TextEditor: React.FC<TextEditorProps> = ({ text, setText }) => {
         height="465px"
         theme={myTheme}
         className="border border-border rounded-md overflow-hidden bg-background-dark"
-        onChange={(value) => setText(value)}
+        onChange={(value) => dispatch(setContent(value))}
       />
     </>
   )

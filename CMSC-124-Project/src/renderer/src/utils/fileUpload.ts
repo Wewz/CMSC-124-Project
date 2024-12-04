@@ -1,18 +1,16 @@
-const handleFileUpload = (
-  event: React.ChangeEvent<HTMLInputElement>, 
-  setText: React.Dispatch<React.SetStateAction<any>>, 
-  setFileContent: React.Dispatch<React.SetStateAction<any>>, 
-) => {
+import { AppDispatch } from '@renderer/store/store'
+import { setContent } from '@renderer/store/slices/contentSlice'
+
+const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, dispatch: AppDispatch) => {
   const file = event.target.files?.[0]
   if (file) {
     const reader = new FileReader()
     reader.onload = (e) => {
       const content = e.target?.result as string
-      setText(content)
-      setFileContent(content)
+      dispatch(setContent(content))
     }
     reader.readAsText(file)
   }
 }
 
-export default handleFileUpload;
+export default handleFileUpload

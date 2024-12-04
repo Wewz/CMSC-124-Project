@@ -1,5 +1,3 @@
-import { useState, useEffect } from 'react'
-import { Lexeme, SymbolTableEntry, ErrorType } from './interfaces/interfaces'
 import TextEditor from './sections/TextEditor'
 import ButtonOption from './sections/ButtonOption'
 import LexemeTable from './sections/LexemeTable'
@@ -7,72 +5,29 @@ import SymbolTable from './sections/SymbolTable'
 import TerminalBox from './sections/Terminal'
 
 function App(): JSX.Element {
-  const [text, setText] = useState('')
-  const [fileContent, setFileContent] = useState<string | null>(null)
-  const [lexemes, setLexemes] = useState<Lexeme[]>([])
-  const [symbolTable, setSymbolTable] = useState<Record<string, SymbolTableEntry>>({}) // const localSymbolTable: Record<string, SymbolTableEntry> = {}
-  const [terminalMsg, setTerminalMsg] = useState<ErrorType[]>([])
-
-  const [lexemeErrors, SetLexemeErrors] = useState<ErrorType[]>([])
-  const [syntaxErrors, SetSyntaxErrors] = useState<ErrorType[]>([])
-  const [semanticsErrors, SetSemanticsErrors] = useState<ErrorType[]>([])
-  const [clear, setClear] = useState<boolean>(false)
-
-  useEffect(() => {
-    if (lexemeErrors.length > 0) {
-      console.log('Lexeme Errors', lexemeErrors)
-      setTerminalMsg((prevMsg) => [...prevMsg, ...lexemeErrors])
-    }
-  }, [lexemeErrors])
-
-  useEffect(() => {
-    if (syntaxErrors.length > 0) {
-      console.log('Syntax Errors', syntaxErrors)
-      setTerminalMsg((prevMsg) => [...prevMsg, ...syntaxErrors])
-    }
-  }, [syntaxErrors])
-
   return (
     <div className="flex h-full">
       <div className="w-[60%] h-full flex-col gap-3">
         <div className="p-[20px]">
           {/* Button options above */}
-          <ButtonOption
-            text={text}
-            lexemes={lexemes}
-            symbolTable={symbolTable}
-            setText={setText}
-            setFileContent={setFileContent}
-            setLexemes={setLexemes}
-            setSymbolTable={setSymbolTable}
-            setTerminalMsg={setTerminalMsg}
-            SetLexemeErrors={SetLexemeErrors}
-            SetSyntaxErrors={SetSyntaxErrors}
-            SetSemanticsErrors={SetSemanticsErrors}
-            setClear={setClear}
-          />
+          <ButtonOption />
 
           {/* Text Editor */}
           <div className="mt-[10px]">
-            <TextEditor text={text} setText={setText} />
+            <TextEditor />
           </div>
         </div>
 
         {/* Terminal */}
-        <TerminalBox
-          terminalMsg={terminalMsg}
-          setTerminalMsg={setTerminalMsg}
-          clear={clear}
-          setClear={setClear}
-        />
+        <TerminalBox />
       </div>
 
       <div className="flex-col gap-3 w-[40%] h-[860px] border-l border-inherit">
         {/* Lexeme Table */}
-        <LexemeTable lexemes={lexemes} />
+        <LexemeTable />
 
         {/* Symbol Table */}
-        <SymbolTable symbolTable={symbolTable} />
+        <SymbolTable />
       </div>
     </div>
   )

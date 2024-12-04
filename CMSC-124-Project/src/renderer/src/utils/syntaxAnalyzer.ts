@@ -1,11 +1,10 @@
-import { Lexeme, SymbolTableEntry } from '@renderer/interfaces/interfaces'
+import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 import { isLiteralOrIdentifier, evaluateExpression } from './analyzerHelperFunctions'
+import { AppDispatch } from '@renderer/store/store'
+import { setSymbolTable } from '@renderer/store/slices/symbolTableSlice'
+import { setErrors } from '@renderer/store/slices/errorSlice'
 
-const syntaxAnalyzer = (
-  content: string,
-  setErrors: React.Dispatch<React.SetStateAction<any>>,
-  setSymbolTable: React.Dispatch<React.SetStateAction<any>>
-) => {
+const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
   const errors: { error: string; line: number }[] = []
   const lines = content.split('\n')
   const localSymbolTable: Record<string, SymbolTableEntry> = {}
@@ -331,11 +330,8 @@ const syntaxAnalyzer = (
 
   console.log('Syntax and Semantic Errors', errors)
 
-  // Update symbol table state
-  setSymbolTable(localSymbolTable)
-
-  // Push errors to the state
-  setErrors(errors)
+  dispatch(setErrors(errors))
+  dispatch(setSymbolTable(localSymbolTable))
 }
 
 export default syntaxAnalyzer
