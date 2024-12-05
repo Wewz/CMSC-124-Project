@@ -99,21 +99,24 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
   }
 
   // Modify VISIBLE processing to handle the "+" operator properly
+  // Modify VISIBLE processing to handle the "+" operator properly
   const visiblePattern = /VISIBLE\s+(.+)/g
   while ((match = visiblePattern.exec(sanitizedContent)) !== null) {
     const expression = match[1].trim()
 
-    // Split concatenated expression by spaces or "+" while keeping "+" as an operator
-    const parts = expression.split(/\s+/g) // Split by spaces for each part
+    const parts = expression.split(/\s+/g)
 
-    parts.forEach((part, index) => {
-      // Check for "+" operator and handle it separately
+    parts.forEach((part) => {
       if (part === '+') {
-        lexemeData.push({
-          lexeme: part,
-          classification: 'Operator',
-          position: match.index + expression.indexOf(part)
-        })
+        if (!seenLexemes.has(part)) {
+          // Check for "+"
+          lexemeData.push({
+            lexeme: part,
+            classification: 'Operator',
+            position: match.index + expression.indexOf(part)
+          })
+          seenLexemes.add(part)
+        }
       } else if (part.match(stringPattern)) {
         const stringMatch = stringPattern.exec(part)
         if (stringMatch && !seenLexemes.has(stringMatch[0])) {
@@ -167,6 +170,10 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
 
   tokens.forEach((token, index) => {
     if (!token || token.trim() === '') {
+      return
+    }
+
+    if (seenLexemes.has(token)) {
       return
     }
 
