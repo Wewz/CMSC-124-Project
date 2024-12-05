@@ -9,7 +9,7 @@ const colors = {
 
 // Function to print colored messages
 const printColoredMessage = (terminal: Terminal, message: string, type: string) => {
-  console.log(`Printing to terminal: ${message} with color: ${type}`)
+  // console.log(`Printing to terminal: ${message} with color: ${type}`)
   const color = colors[type] || '37' // Default to white if unknown type
   terminal.writeln(`\x1b[${color}m${message}\x1b[0m`) // Print message
 }

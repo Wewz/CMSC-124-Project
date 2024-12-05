@@ -35,7 +35,7 @@ const evaluateExpression = (
   lineNumber: number,
   errors: { error: string; line: number }[]
 ): { type: string; value: any } => {
-  console.log('Current Expression', expression)
+  // console.log('Current Expression', expression)
 
   // Check for literals
   if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
@@ -80,8 +80,8 @@ const evaluateExpression = (
     { pattern: /DIFFRINT(\w+)\s+AN\s+(\w+)/, operation: (a, b) => a !== b }
   ]
 
-  const arithmeticKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /BOTH/, /DIFFRINT/]
-  const logicalKeywords = [/SUM/, /DIFF/, /PRODUKT/, /QUOSHUNT/, /MOD/, /BIGGR/, /SMALLR/]
+  const arithmeticKeywords = [/SUM/, /DIFF/, /PRODUKT/, /QUOSHUNT/, /MOD/, /BIGGR/, /SMALLR/]
+  const logicalKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /BOTH/, /DIFFRINT/]
   const comparisonKeywords = [/BOTH/, /DIFFRINT/]
 
   // Recursive evaluation for arithmetic, logical, and comparison operations
@@ -93,7 +93,7 @@ const evaluateExpression = (
         if (match) {
           matched = true
 
-          console.log('Matched Expression', match)
+          // console.log('Matched Expression', match)
 
           if (patternsKeywords.some((keyword) => match[1].includes(keyword.source))) {
             matched = false
@@ -134,7 +134,7 @@ const evaluateExpression = (
               error: `Invalid operands for ${patternName} operation: "${match[0]}"`,
               line: lineNumber
             })
-            console.log('Invalid operators', match)
+            // console.log('Invalid operators', match)
             return { type: 'ERROR', value: null }
           }
         }

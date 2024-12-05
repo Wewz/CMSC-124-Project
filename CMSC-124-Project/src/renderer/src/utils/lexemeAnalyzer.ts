@@ -10,20 +10,23 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
   const literalPositions = new Set<number>()
   const errors: { error: string; line: number }[] = []
 
+  // Add FAIL and WIN to keywords if they are constants or predefined keywords
   const keywords =
-    /\b(?:AN|VISIBLE|HAI|KTHXBYE|WAZZUP|BUHBYE|BTW|OBTW|TLDR|I HAS A|ITZ|R|SUM OF|DIFF OF|PRODUKT OF|QUOSHUNT OF|MOD OF|BIGGR OF|SMALLR OF|BOTH OF|EITHER OF|WON OF|NOT|ANY OF|ALL OF|BOTH SAEM|DIFFRINT|SMOOSH|MAEK|A|IS NOW A|VISIBLE|GIMMEH|O RLY|YA RLY|MEBBE|NO WAI|OIC|WTF|OMG|OMGWTF|IM IN YR|UPPIN|NERFIN|YR|TIL|WILE|IM OUTTA YR|HOW IZ I|IF U SAY SO|GTFO|FOUND YR|I IZ|MKAY)\b\??/g
+    /\b(?:AN|VISIBLE|HAI|KTHXBYE|WAZZUP|BUHBYE|BTW|OBTW|TLDR|I HAS A|ITZ|R|SUM OF|DIFF OF|PRODUKT OF|QUOSHUNT OF|MOD OF|BIGGR OF|SMALLR OF|BOTH OF|EITHER OF|WON OF|NOT|ANY OF|ALL OF|BOTH SAEM|DIFFRINT|SMOOSH|MAEK|A|IS NOW A|VISIBLE|GIMMEH|O RLY|YA RLY|MEBBE|NO WAI|OIC|WTF|OMG|OMGWTF|IM IN YR|UPPIN|NERFIN|YR|TIL|WILE|IM OUTTA YR|HOW IZ I|IF U SAY SO|GTFO|FOUND YR|I IZ|MKAY|FAIL|WIN)\b\??/g
 
   const identifierPattern = /\b[A-Za-z][A-Za-z0-9_]*\b/g
   const stringPattern = /(["'])(.*?)(\1)/g
-  const numberPattern = /\b\d+(\.\d+)?\b/g
+  const numberPattern = /\b\d+\.\d+|\b\d+\b/g
   const operatorPattern = /[\+\-*/%]/g
 
   // Sanitize comments from content before lexeme analysis
   const sanitizedContent = content
     // Handle multi-line comments (OBTW ... TLDR)
     .replace(/OBTW[\s\S]*?TLDR/g, '')
-    // Handle inline comments (BTW ...)
+    // Remove inline comments (BTW and everything after it on the same line)
     .replace(/BTW.*/g, '')
+    // Remove any empty lines or lines with only whitespace
+    .replace(/^\s*$(?:\r\n?|\n)/gm, '')
 
   let match
   const seenLexemes = new Set<string>()
@@ -62,8 +65,9 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
     }
   }
 
-  // Match numbers
+  // Match numbers correctly, ensuring we don't split them
   while ((match = numberPattern.exec(sanitizedContent)) !== null) {
+    console.log('Found number:', match[0]) // Debugging
     if (!seenLexemes.has(match[0])) {
       lexemeData.push({ lexeme: match[0], classification: 'Literal', position: match.index })
       seenLexemes.add(match[0])
@@ -94,15 +98,23 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
     }
   }
 
-  // Handle concatenation within VISIBLE statements
+  // Modify VISIBLE processing to handle the "+" operator properly
   const visiblePattern = /VISIBLE\s+(.+)/g
   while ((match = visiblePattern.exec(sanitizedContent)) !== null) {
     const expression = match[1].trim()
 
-    // Split concatenated expression by '+' or whitespace
-    const parts = expression.split(/\s*\+\s*/g)
-    parts.forEach((part) => {
-      if (part.match(stringPattern)) {
+    // Split concatenated expression by spaces or "+" while keeping "+" as an operator
+    const parts = expression.split(/\s+/g) // Split by spaces for each part
+
+    parts.forEach((part, index) => {
+      // Check for "+" operator and handle it separately
+      if (part === '+') {
+        lexemeData.push({
+          lexeme: part,
+          classification: 'Operator',
+          position: match.index + expression.indexOf(part)
+        })
+      } else if (part.match(stringPattern)) {
         const stringMatch = stringPattern.exec(part)
         if (stringMatch && !seenLexemes.has(stringMatch[0])) {
           lexemeData.push(
@@ -129,7 +141,7 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
           lexemeData.push({
             lexeme: part.trim(),
             classification: 'Identifier',
-            position: match.index
+            position: match.index + expression.indexOf(part)
           })
           seenLexemes.add(part.trim())
         }
@@ -138,7 +150,7 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
           lexemeData.push({
             lexeme: part.trim(),
             classification: 'Literal',
-            position: match.index
+            position: match.index + expression.indexOf(part)
           })
           seenLexemes.add(part.trim())
         }
@@ -147,21 +159,58 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
   }
 
   // Add errors for unrecognized tokens
-  sanitizedContent.split(/\s+/).forEach((word, index) => {
-    keywords.lastIndex = 0
-    identifierPattern.lastIndex = 0
-    stringPattern.lastIndex = 0
-    numberPattern.lastIndex = 0
+  const tokenPattern =
+    /(?:\b(?:VISIBLE|AN|HAI|KTHXBYE|WAZZUP|BUHBYE|BTW|OBTW|TLDR|I HAS A|ITZ|R|SUM OF|DIFF OF|PRODUKT OF|QUOSHUNT OF|MOD OF|BIGGR OF|SMALLR OF|BOTH OF|EITHER OF|WON OF|NOT|ANY OF|ALL OF|BOTH SAEM|DIFFRINT|SMOOSH|MAEK|A|IS NOW A|VISIBLE|GIMMEH|O RLY|YA RLY|MEBBE|NO WAI|OIC|WTF|OMG|OMGWTF|IM IN YR|UPPIN|NERFIN|YR|TIL|WILE|IM OUTTA YR|HOW IZ I|IF U SAY SO|GTFO|FOUND YR|I IZ|MKAY|FAIL|WIN)\b\??)|(?:[A-Za-z_][A-Za-z0-9_]*)|(?:\d+\.\d+|\d+)|(?:".*?")|(?:[+\-*\/=<>!%&|^~])|(?:\s+)/g
 
-    if (
-      !keywords.test(word) &&
-      !identifierPattern.test(word) &&
-      !stringPattern.test(word) &&
-      !numberPattern.test(word)
-    ) {
-      errors.push({ error: `Unrecognized token: "${word}"`, line: index + 1 })
+  // Split content into tokens while preserving operators
+  const tokens = sanitizedContent.split(tokenPattern)
+
+  tokens.forEach((token, index) => {
+    if (!token || token.trim() === '') {
+      return
+    }
+
+    if (keywords.test(token)) {
+      // Keyword
+      lexemeData.push({
+        lexeme: token,
+        classification: keywordClassifications[token] || 'Keyword',
+        position: index + 1
+      })
+    } else if (identifierPattern.test(token)) {
+      // Identifier
+      lexemeData.push({
+        lexeme: token,
+        classification: 'Identifier',
+        position: index + 1
+      })
+    } else if (stringPattern.test(token)) {
+      // String literal
+      lexemeData.push({
+        lexeme: token,
+        classification: 'String Literal',
+        position: index + 1
+      })
+    } else if (numberPattern.test(token)) {
+      // Number literal
+      lexemeData.push({
+        lexeme: token,
+        classification: 'Number Literal',
+        position: index + 1
+      })
+    } else if (operatorPattern.test(token)) {
+      // Operator
+      lexemeData.push({
+        lexeme: token,
+        classification: 'Operator',
+        position: index + 1
+      })
+    } else {
+      // Unrecognized token
+      errors.push({ error: `Unrecognized token: "${token}"`, line: index + 1 })
     }
   })
+  console.log('Lexeme Errors', errors)
 
   lexemeData.sort((a, b) => a.position - b.position)
   dispatch(setErrors(errors))

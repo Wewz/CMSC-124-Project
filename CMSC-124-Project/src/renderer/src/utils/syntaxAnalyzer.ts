@@ -131,12 +131,16 @@ const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
         } else {
           // Evaluate the value
           const evalResult = evaluateExpression(value, localSymbolTable, lineNumber + 1, errors)
-          const expectedType = localSymbolTable[variable].type
+          const currentType = localSymbolTable[variable].type
 
-          // Check for type mismatch
-          if (expectedType !== 'UNDEFINED' && evalResult.type !== expectedType) {
+          // Allow reassignment if the current type is NOOB
+          if (
+            currentType !== 'UNDEFINED' &&
+            currentType !== 'NOOB' &&
+            evalResult.type !== currentType
+          ) {
             errors.push({
-              error: `Type mismatch in assignment to "${variable}". Expected: ${expectedType}, Got: ${evalResult.type}`,
+              error: `Type mismatch in assignment to "${variable}". Expected: ${currentType}, Got: ${evalResult.type}`,
               line: lineNumber + 1
             })
           } else {
