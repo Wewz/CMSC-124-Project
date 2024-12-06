@@ -2,7 +2,11 @@ import { useEffect } from 'react'
 import { useTerminal } from '@renderer/hooks/useTerminal'
 import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from '@renderer/store/store'
-import { printColoredMessage, handleCommand, prompt } from '@renderer/utils/terminalFunctions'
+import {
+  printColoredMessage,
+  handleCommand,
+  prompt
+} from '@renderer/utils/ui-helpers/terminalFunctions'
 import {
   setClearTerminal,
   setClearTerminalMessage
@@ -44,7 +48,7 @@ const TerminalBox: React.FC = () => {
 
   // printing errors in terminal
   useEffect(() => {
-    console.log('TERMINAL', errors, isShowErrors)
+    // console.log('TERMINAL', errors, isShowErrors)
 
     if (terminalInstanceRef.current && isShowErrors) {
       for (const { error, line } of errors) {

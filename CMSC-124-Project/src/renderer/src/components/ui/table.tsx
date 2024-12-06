@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { cn } from '@renderer/utils/tailwindMerger'
+import { cn } from '@renderer/utils/ui-helpers/tailwindMerger'
 
 const Table = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (

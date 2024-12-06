@@ -1,7 +1,11 @@
 import { useEffect, useRef } from 'react'
 import { Terminal } from 'xterm'
 import { FitAddon } from 'xterm-addon-fit'
-import { printColoredMessage, prompt, handleCommand } from '@renderer/utils/terminalFunctions'
+import {
+  printColoredMessage,
+  prompt,
+  handleCommand
+} from '@renderer/utils/ui-helpers/terminalFunctions'
 import 'xterm/css/xterm.css'
 
 export const useTerminal = () => {

@@ -1,5 +1,5 @@
 import { Lexeme, SymbolTableEntry } from '@renderer/interfaces/interfaces'
-import { isLiteralOrIdentifier, extractConditionalBlock } from './analyzerHelperFunctions'
+import { isLiteralOrIdentifier, extractConditionalBlock } from './expressionEvaluationHelper'
 
 const semanticAnalyzer = (
   content: string,

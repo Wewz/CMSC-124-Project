@@ -1,7 +1,7 @@
 import * as React from 'react'
 import * as SeparatorPrimitive from '@radix-ui/react-separator'
 
-import { cn } from '@renderer/utils/tailwindMerger'
+import { cn } from '@renderer/utils/ui-helpers/tailwindMerger'
 
 const Separator = React.forwardRef<
   React.ElementRef<typeof SeparatorPrimitive.Root>,
