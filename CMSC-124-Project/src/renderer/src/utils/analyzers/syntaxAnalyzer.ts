@@ -14,7 +14,7 @@ import {
   handleTypeCasting
 } from './syntaxAnalyzerHelper'
 
-const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
+const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   const errors: { error: string; line: number }[] = []
   const lines = content.split('\n')
   const localSymbolTable: Record<string, SymbolTableEntry> = {}
@@ -26,7 +26,8 @@ const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
   let foundHai = false
   let foundWazzup = false
 
-  lines.forEach((line, lineNumber) => {
+  for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+    const line = lines[lineNumber]
     const trimmedLine = line
       .replace(/"([^"]*)"|BTW.*/g, (match, string) => {
         if (string !== undefined) return `"${string}"`
@@ -34,13 +35,14 @@ const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
       })
       .trim()
 
-    if (!trimmedLine) return
+    if (!trimmedLine) continue
 
+    // Handle different line patterns
     if (/^HAI$/.test(trimmedLine)) {
       foundHai = true
-      return
+      continue
     }
-    if (/^KTHXBYE$/.test(trimmedLine)) return
+    if (/^KTHXBYE$/.test(trimmedLine)) break
 
     if (/^WAZZUP$/.test(trimmedLine)) {
       insideWazzup = true
@@ -49,43 +51,53 @@ const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
           error: `'WAZZUP' must be immediately after 'HAI' and only once`,
           line: lineNumber + 1
         })
+        break
       } else {
         foundWazzup = true
       }
-      return
+      continue
     }
+
+    // Handle errors immediately
     if (/^BUHBYE$/.test(trimmedLine)) {
       if (!insideWazzup) {
         errors.push({
           error: `'BUHBYE' found outside of a WAZZUP block`,
           line: lineNumber + 1
         })
+        break
       } else {
         insideWazzup = false
       }
-      return
+      continue
     }
 
+    // Handle variable declarations
     if (/^I HAS A /.test(trimmedLine)) {
       handleVariableDeclaration(trimmedLine, lineNumber, localSymbolTable, errors, insideWazzup)
-      return
+      continue
     }
 
+    // Handle variable assignments
     if (/^[A-Za-z][A-Za-z0-9_]* R /.test(trimmedLine)) {
       handleVariableAssignment(trimmedLine, lineNumber, localSymbolTable, errors)
-      return
+      continue
     }
 
+    // Handle output statements
     if (/^VISIBLE /.test(trimmedLine)) {
       handleOutputStatements(trimmedLine, lineNumber, localSymbolTable, errors)
-      return
+      continue
     }
 
+    // Handle input statements
     if (/^GIMMEH /.test(trimmedLine)) {
-      handleInputStatements(trimmedLine, lineNumber, localSymbolTable, errors)
-      return
+      await handleInputStatements(trimmedLine, lineNumber, localSymbolTable, errors, dispatch)
+      console.log('Updated Variables: ', localSymbolTable)
+      continue
     }
 
+    // Handle conditional statements
     insideConditional = handleConditionalStatements(
       trimmedLine,
       lineNumber,
@@ -93,30 +105,30 @@ const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
       errors
     )
 
+    // Handle loops
     insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
 
+    // Handle function declarations
     insideFunction = handleFunctionDeclarations(trimmedLine, lineNumber, insideFunction, errors)
 
+    // Handle function calls
     if (/^I IZ /.test(trimmedLine)) {
       handleFunctionCalls(trimmedLine, lineNumber, errors)
-      return
+      continue
     }
 
+    // Handle type casting
     if (/^MAEK /.test(trimmedLine)) {
       handleTypeCasting(trimmedLine, lineNumber, localSymbolTable, errors)
-      return
+      continue
     }
 
-    if (/^WTF\?$/.test(trimmedLine)) return
-    if (/^OMG .+$/.test(trimmedLine)) return
-    if (/^OMGWTF$/.test(trimmedLine)) return
-    if (/^OIC$/.test(trimmedLine)) return
-
+    // Unrecognized syntax
     errors.push({
       error: `Unrecognized syntax: "${trimmedLine}"`,
       line: lineNumber + 1
     })
-  })
+  }
 
   if (insideConditional) {
     errors.push({ error: "Unterminated conditional block (missing 'OIC')", line: lines.length })
@@ -130,6 +142,8 @@ const syntaxAnalyzer = (content: string, dispatch: AppDispatch) => {
       line: lines.length
     })
   }
+
+  console.log('Syntax Errors', errors)
 
   dispatch(setErrors(errors))
   dispatch(setSymbolTable(localSymbolTable))

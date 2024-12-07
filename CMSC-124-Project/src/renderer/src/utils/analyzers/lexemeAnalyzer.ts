@@ -50,11 +50,14 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
   handleVisibleStatements(
     sanitizedContent,
     visiblePattern,
+    keywords,
     stringPattern,
     identifierPattern,
     numberPattern,
+    operatorPattern,
     seenLexemes,
-    lexemeData
+    lexemeData,
+    errors
   )
 
   // Add errors for unrecognized tokens

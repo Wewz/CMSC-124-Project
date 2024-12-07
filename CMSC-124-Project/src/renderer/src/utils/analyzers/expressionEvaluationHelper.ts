@@ -35,7 +35,7 @@ const evaluateExpression = (
   lineNumber: number,
   errors: { error: string; line: number }[]
 ): { type: string; value: any } => {
-  // console.log('Current Expression', expression)
+  console.log('Current Expression', expression)
 
   // Check for literals
   if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
@@ -134,7 +134,7 @@ const evaluateExpression = (
               error: `Invalid operands for ${patternName} operation: "${match[0]}"`,
               line: lineNumber
             })
-            // console.log('Invalid operators', match)
+            console.log('Invalid operators', match)
             return { type: 'ERROR', value: null }
           }
         }

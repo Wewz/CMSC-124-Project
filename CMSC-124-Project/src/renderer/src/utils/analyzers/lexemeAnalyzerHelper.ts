@@ -110,11 +110,14 @@ const matchIdentifiers = (
 const handleVisibleStatements = (
   content: string,
   visiblePattern: RegExp,
+  keywords: RegExp,
   stringPattern: RegExp,
   identifierPattern: RegExp,
   numberPattern: RegExp,
+  operatorPattern: RegExp,
   seenLexemes: Set<string>,
-  lexemeData: Lexeme[]
+  lexemeData: Lexeme[],
+  errors: { error: string; line: number }[]
 ) => {
   let match
   while ((match = visiblePattern.exec(content)) !== null) {
@@ -123,7 +126,17 @@ const handleVisibleStatements = (
     // Split concatenated expression by '+' or whitespace
     const parts = expression.split(/\s*\+\s*/g)
     parts.forEach((part) => {
-      if (part.match(stringPattern)) {
+      if (keywords.test(part)) {
+        const keywordMatch = keywords.exec(part)
+        if (keywordMatch && !seenLexemes.has(keywordMatch[0])) {
+          lexemeData.push({
+            lexeme: keywordMatch[0],
+            classification: keywordClassifications[keywordMatch[0]] || 'Keyword',
+            position: keywordMatch.index
+          })
+          seenLexemes.add(keywordMatch[0])
+        }
+      } else if (part.match(stringPattern)) {
         const stringMatch = stringPattern.exec(part)
         if (stringMatch && !seenLexemes.has(stringMatch[0])) {
           lexemeData.push(
@@ -163,6 +176,20 @@ const handleVisibleStatements = (
           })
           seenLexemes.add(part.trim())
         }
+      } else if (part.match(operatorPattern)) {
+        if (!seenLexemes.has(part.trim())) {
+          lexemeData.push({
+            lexeme: part.trim(),
+            classification: 'Operator',
+            position: match.index
+          })
+          seenLexemes.add(part.trim())
+        }
+      } else {
+        errors.push({
+          error: `Unrecognized token in VISIBLE statement: "${part}"`,
+          line: match.index
+        })
       }
     })
   }

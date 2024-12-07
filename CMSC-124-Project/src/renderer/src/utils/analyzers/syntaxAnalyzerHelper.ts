@@ -1,5 +1,7 @@
 import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 import { isLiteralOrIdentifier, evaluateExpression } from './expressionEvaluationHelper'
+import { requestUserInput, clearUserInput } from '@renderer/store/slices/userInputSlice'
+import store, { AppDispatch } from '@renderer/store/store'
 
 const handleVariableDeclaration = (
   trimmedLine: string,
@@ -96,6 +98,8 @@ const handleOutputStatements = (
 
     let outputResult = ''
 
+    console.log('Expression: ', match)
+
     for (const part of parts) {
       try {
         if (/^".*"$/.test(part)) {
@@ -103,6 +107,8 @@ const handleOutputStatements = (
         } else {
           const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors)
           outputResult += evalResult.value.toString()
+
+          console.log(`Expression evaluation result: ${part} = ${outputResult}`)
         }
       } catch (error) {
         errors.push({
@@ -117,21 +123,46 @@ const handleOutputStatements = (
   }
 }
 
-const handleInputStatements = (
+const handleInputStatements = async (
   trimmedLine: string,
   lineNumber: number,
   localSymbolTable: Record<string, SymbolTableEntry>,
-  errors: { error: string; line: number }[]
+  errors: { error: string; line: number }[],
+  dispatch: AppDispatch
 ) => {
   const match = trimmedLine.match(/^GIMMEH ([A-Za-z][A-Za-z0-9_]*)$/)
   if (match) {
     const variable = match[1]
+
     if (!localSymbolTable[variable]) {
       errors.push({
         error: `Undeclared variable used in input: "${variable}"`,
         line: lineNumber + 1
       })
+      return
     }
+
+    // Dispatch the action to request user input
+    dispatch(requestUserInput(variable))
+
+    // Pause execution and wait for user input
+    const userInput = await new Promise<string>((resolve, reject) => {
+      const unsubscribe = store.subscribe(() => {
+        const state = store.getState()
+        if (state.userInput.ready && state.userInput.variable === variable) {
+          if (state.userInput.value !== null) {
+            resolve(state.userInput.value)
+            unsubscribe()
+          } else {
+            reject(new Error('Input not received in time'))
+          }
+        }
+      })
+    })
+    dispatch(clearUserInput())
+
+    // Directly modify the local symbol table
+    localSymbolTable[variable] = { type: 'YARN', value: userInput, existingProperty: null }
   }
 }
 

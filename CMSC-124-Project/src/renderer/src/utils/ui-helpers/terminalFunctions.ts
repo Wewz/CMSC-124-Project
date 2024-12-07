@@ -1,4 +1,5 @@
 import { Terminal } from 'xterm'
+import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 
 const colors = {
   green: '32',
@@ -13,6 +14,10 @@ const printColoredMessage = (terminal: Terminal, message: string, type: string) 
   const color = colors[type] || '37' // Default to white if unknown type
   terminal.writeln(`\x1b[${color}m${message}\x1b[0m`) // Print message
 }
+
+// const prompt = (terminal: Terminal) => {
+//   terminal.write(`\x1b[34mLOLCODE$>\x1b[0m `) // Blue "LOLCODE$>"
+// }
 
 // Function to print the prompt
 const prompt = (terminal: Terminal, inputBufferRef: React.MutableRefObject<string>) => {
@@ -36,7 +41,7 @@ const handleCommand = (
     clearTerminalContent(terminal) // Call a separate function to clear content
     prompt(terminal, inputBufferRef) // Reprompt after clearing
   } else if (trimmedInput === 'help') {
-    // ... existing logic for help
+    printColoredMessage(terminal, 'Available commands: clear, help, test', 'green')
   } else if (trimmedInput === 'test') {
     terminal.write('\x1b[2K\r') // Only clear the current line
   } else if (trimmedInput) {
