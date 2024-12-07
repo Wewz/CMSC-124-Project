@@ -120,7 +120,9 @@ const handleOutputStatements = (
     }
 
     console.log('Output the evaluated result', outputResult + '\n')
+    return outputResult
   }
+  return null
 }
 
 const handleInputStatements = async (

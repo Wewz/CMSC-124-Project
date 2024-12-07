@@ -13,6 +13,9 @@ import {
   handleFunctionCalls,
   handleTypeCasting
 } from './syntaxAnalyzerHelper'
+import { printColoredMessage } from '../ui-helpers/terminalFunctions'
+import { Terminal } from 'xterm'
+import { setTerminalMessage } from '@renderer/store/slices/terminalMessageSlice'
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   const errors: { error: string; line: number }[] = []
@@ -27,6 +30,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let foundWazzup = false
 
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+    const terminal = new Terminal()
     const line = lines[lineNumber]
     const trimmedLine = line
       .replace(/"([^"]*)"|BTW.*/g, (match, string) => {
@@ -86,7 +90,8 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
 
     // Handle output statements
     if (/^VISIBLE /.test(trimmedLine)) {
-      handleOutputStatements(trimmedLine, lineNumber, localSymbolTable, errors)
+      const outputMessage = handleOutputStatements(trimmedLine, lineNumber, localSymbolTable, errors)
+      dispatch(setTerminalMessage({ message: outputMessage ?? "invalid", color: 'green' }))
       continue
     }
 
