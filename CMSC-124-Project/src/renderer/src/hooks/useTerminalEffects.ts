@@ -28,7 +28,7 @@ const useTerminalEffects = (
   // Messages to print in terminal
   const messages = useSelector((state: RootState) => state.terminalMessage.terminalMessage)
 
-  // printing clears in terminal
+  // clears the terminal
   useEffect(() => {
     if (!terminalInstanceRef.current) {
       return // Skip if terminalInstance is undefined

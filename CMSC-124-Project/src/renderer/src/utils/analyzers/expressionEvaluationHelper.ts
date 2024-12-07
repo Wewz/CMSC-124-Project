@@ -29,6 +29,39 @@ const extractConditionalBlock = (lines: string[], startLine: number): { valid: b
   return { valid: hasYaRly && hasOic }
 }
 
+// Helper function to parse YARN as a number
+const parseYarnToNumber = (value: string) => {
+  if (/^-?\d+$/.test(value)) return { type: 'NUMBR', value: parseInt(value, 10) }
+  if (/^-?\d+\.\d+$/.test(value)) return { type: 'NUMBAR', value: parseFloat(value) }
+  return null
+}
+
+const typecastValue = (
+  value: any,
+  type: string,
+  context: 'arithmetic' | 'boolean' | 'comparison'
+): { type: string; value: any } => {
+  if (type === 'NOOB') {
+    return context === 'arithmetic' ? { type: 'NUMBR', value: 0 } : { type: 'TROOF', value: false }
+  }
+
+  if (type === 'TROOF') {
+    return {
+      type: 'NUMBR',
+      value: value === true ? 1 : 0
+    }
+  }
+
+  if (type === 'YARN' || type === 'NUMBR' || type === 'NUMBAR') {
+    if (context === 'boolean' || context === 'comparison') {
+      const isFalsy = value === '' || value === 0 || value === '0'
+      return { type: 'TROOF', value: !isFalsy }
+    }
+  }
+
+  return { type, value }
+}
+
 const evaluateExpression = (
   expression: string,
   symbolTable: Record<string, SymbolTableEntry>,
@@ -42,11 +75,20 @@ const evaluateExpression = (
   if (/^-?\d+\.\d+$/.test(expression)) return { type: 'NUMBAR', value: parseFloat(expression) }
   if (/^(WIN|FAIL)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
   if (/^(true|false)$/.test(expression)) return { type: 'TROOF', value: expression === 'true' }
-  if (/^".*"$/.test(expression)) return { type: 'YARN', value: expression.slice(1, -1) }
+  if (/^".*"$/.test(expression)) {
+    const strippedValue = expression.slice(1, -1)
+    const parsed = parseYarnToNumber(strippedValue)
+    if (parsed) return parsed // Convert YARN to NUMBR or NUMBAR if possible
+    return { type: 'YARN', value: strippedValue }
+  }
 
   // Check for valid variable
   if (symbolTable[expression]) {
     const variable = symbolTable[expression]
+    if (variable.type === 'YARN') {
+      const parsed = parseYarnToNumber(variable.value)
+      if (parsed) return parsed
+    }
     return { type: variable.type, value: variable.value }
   }
 

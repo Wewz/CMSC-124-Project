@@ -8,14 +8,6 @@ const TerminalBox: React.FC = () => {
   useTerminalEffects(terminalInstanceRef, inputBufferRef)
   useTerminalInput({ terminalInstanceRef, inputBufferRef })
 
-  // useEffect(() => {
-  //   if (terminalInstanceRef.current) {
-  //     // Initialize terminal effects and input handling
-  //     // useTerminalEffects(terminalInstanceRef, inputBufferRef)
-  //     useTerminalInput({ terminalInstanceRef, inputBufferRef })
-  //   }
-  // }, [terminalInstanceRef, inputBufferRef])
-
   return (
     <div className="flex flex-col px-[20px]">
       <div className="w-full font-bold py-[10px] pl-[20px] text-[14px] bg-background-dark rounded-t-md border-x border-t border-border">
