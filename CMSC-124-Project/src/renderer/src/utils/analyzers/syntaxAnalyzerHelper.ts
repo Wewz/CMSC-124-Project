@@ -92,74 +92,45 @@ const handleOutputStatements = (
   localSymbolTable: Record<string, SymbolTableEntry>,
   errors: { error: string; line: number }[]
 ) => {
-  // Check for VISIBLE and handle the expression
   const match = trimmedLine.match(/^VISIBLE (.+)$/);
   if (match) {
     const outputExpr = match[1].trim();
+    const parts = outputExpr.split(/\s+AN\s+/).map((part) => part.trim());
+
     let outputResult = '';
 
-    // Check if SMOOSH is part of the expression
-    if (/^SMOOSH/.test(outputExpr)) {
-      const smooshPart = outputExpr.replace(/^SMOOSH /, '').trim();  // Remove 'SMOOSH' from the start
+    console.log('Expression: ', match);
 
-      // Split by " AN " to get the variables or values to be concatenated
-      const parts = smooshPart.split(/\s+AN\s+/).map((part) => part.trim());
-
-      console.log('Smoosh Parts:', parts);
-
-      // Concatenate the parts
-      for (const part of parts) {
-        try {
-          if (/^".*"$/.test(part)) {
-            // It's a string literal
-            outputResult += part.slice(1, -1); // Remove the surrounding quotes
+    for (const part of parts) {
+      try {
+        if (/^".*"$/.test(part)) {
+          outputResult += part.slice(1, -1); // Handle string literals
+        } else {
+          // If it's a variable, look it up in the symbol table
+          const symbol = localSymbolTable[part];
+          if (symbol) {
+            outputResult += symbol.value.toString();
+            console.log(`Variable ${part} value: ${symbol.value}`);
           } else {
-            // It's a variable
-            const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors);
-            outputResult += evalResult.value.toString();
+            errors.push({
+              error: `Undefined variable: "${part}"`,
+              line: lineNumber + 1
+            });
           }
-        } catch (error) {
-          errors.push({
-            error: `Invalid output expression: "${part}"`,
-            line: lineNumber + 1
-          });
-          return;
         }
+      } catch (error) {
+        errors.push({
+          error: `Invalid output expression: "${part}"`,
+          line: lineNumber + 1
+        });
+        return;
       }
-
-      console.log('Smooshed output:', outputResult);
-      return outputResult; // Return the concatenated result
-    } else {
-      // Regular output (not smooshed)
-      const parts = outputExpr.split(/(?<!\\)\+/).map((part) => part.trim());
-
-      console.log('Expression:', match);
-
-      for (const part of parts) {
-        try {
-          if (/^".*"$/.test(part)) {
-            outputResult += part.slice(1, -1); // Remove quotes from string literal
-          } else {
-            const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors);
-            outputResult += evalResult.value.toString();
-
-            console.log(`Expression evaluation result: ${part} = ${outputResult}`);
-          }
-        } catch (error) {
-          errors.push({
-            error: `Invalid output expression: "${part}"`,
-            line: lineNumber + 1
-          });
-          return;
-        }
-      }
-
-      console.log('Output the evaluated result:', outputResult + '\n');
-      return outputResult; // Return the evaluated result
     }
+
+    console.log('Output the evaluated result', outputResult + '\n');
+    return outputResult;
   }
 };
-
 
 const handleInputStatements = async (
   trimmedLine: string,
@@ -362,6 +333,67 @@ const handleTypeCasting = (
     })
   }
 }
+
+const handleSMOOSH = (
+  trimmedLine: string,
+  lineNumber: number,
+  localSymbolTable: Record<string, SymbolTableEntry>,
+  errors: { error: string; line: number }[],
+  functionState: functionState
+) => {
+  const smooshMatch = trimmedLine.match(/^SMOOSH (.+)$/);
+  if (smooshMatch) {
+    const expression = smooshMatch[1].trim();
+
+    // Split the expression by " AN " which is the delimiter between parts
+    const parts = expression.split(/\s+AN\s+/).map(part => part.trim());
+
+    let concatenatedResult = '';
+
+    // Iterate over each part of the expression
+    for (const part of parts) {
+      if (/^".*"$/.test(part)) {
+        // It's a string literal, remove the quotes and concatenate
+        concatenatedResult += part.slice(1, -1);
+      } else {
+        // Check if it's a variable
+        const symbol = localSymbolTable[part];
+        if (symbol) {
+          concatenatedResult += symbol.value.toString();
+        } else {
+          // If it's an undefined variable, evaluate the expression
+          try {
+            const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors);
+            concatenatedResult += evalResult.value.toString();
+          } catch (error) {
+            errors.push({
+              error: `Invalid expression: "${part}"`,
+              line: lineNumber
+            });
+            return; // Stop execution if there's an error
+          }
+        }
+      }
+    }
+
+    // Now handle the assignment case like `x R SMOOSH ...`
+    const assignmentMatch = trimmedLine.match(/^([A-Za-z][A-Za-z0-9_]*) R SMOOSH/);
+    if (assignmentMatch) {
+      const varName = assignmentMatch[1];
+      localSymbolTable[varName] = {
+        existingProperty: null,  // Default ReactNode or null
+        type: 'string',  // The result will be a string
+        value: concatenatedResult
+      };
+    }
+
+    // Return the final concatenated result
+    return concatenatedResult;
+  }
+};
+
+
+
 
 export {
   handleVariableDeclaration,
