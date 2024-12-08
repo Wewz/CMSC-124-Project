@@ -92,38 +92,74 @@ const handleOutputStatements = (
   localSymbolTable: Record<string, SymbolTableEntry>,
   errors: { error: string; line: number }[]
 ) => {
-  const match = trimmedLine.match(/^VISIBLE (.+)$/)
+  // Check for VISIBLE and handle the expression
+  const match = trimmedLine.match(/^VISIBLE (.+)$/);
   if (match) {
-    const outputExpr = match[1].trim()
-    const parts = outputExpr.split(/(?<!\\)\+/).map((part) => part.trim())
+    const outputExpr = match[1].trim();
+    let outputResult = '';
 
-    let outputResult = ''
+    // Check if SMOOSH is part of the expression
+    if (/^SMOOSH/.test(outputExpr)) {
+      const smooshPart = outputExpr.replace(/^SMOOSH /, '').trim();  // Remove 'SMOOSH' from the start
 
-    console.log('Expression: ', match)
+      // Split by " AN " to get the variables or values to be concatenated
+      const parts = smooshPart.split(/\s+AN\s+/).map((part) => part.trim());
 
-    for (const part of parts) {
-      try {
-        if (/^".*"$/.test(part)) {
-          outputResult += part.slice(1, -1)
-        } else {
-          const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors)
-          outputResult += evalResult.value.toString()
+      console.log('Smoosh Parts:', parts);
 
-          console.log(`Expression evaluation result: ${part} = ${outputResult}`)
+      // Concatenate the parts
+      for (const part of parts) {
+        try {
+          if (/^".*"$/.test(part)) {
+            // It's a string literal
+            outputResult += part.slice(1, -1); // Remove the surrounding quotes
+          } else {
+            // It's a variable
+            const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors);
+            outputResult += evalResult.value.toString();
+          }
+        } catch (error) {
+          errors.push({
+            error: `Invalid output expression: "${part}"`,
+            line: lineNumber + 1
+          });
+          return;
         }
-      } catch (error) {
-        errors.push({
-          error: `Invalid output expression: "${part}"`,
-          line: lineNumber + 1
-        })
-        return
       }
-    }
 
-    console.log('Output the evaluated result', outputResult + '\n')
-    return outputResult
+      console.log('Smooshed output:', outputResult);
+      return outputResult; // Return the concatenated result
+    } else {
+      // Regular output (not smooshed)
+      const parts = outputExpr.split(/(?<!\\)\+/).map((part) => part.trim());
+
+      console.log('Expression:', match);
+
+      for (const part of parts) {
+        try {
+          if (/^".*"$/.test(part)) {
+            outputResult += part.slice(1, -1); // Remove quotes from string literal
+          } else {
+            const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors);
+            outputResult += evalResult.value.toString();
+
+            console.log(`Expression evaluation result: ${part} = ${outputResult}`);
+          }
+        } catch (error) {
+          errors.push({
+            error: `Invalid output expression: "${part}"`,
+            line: lineNumber + 1
+          });
+          return;
+        }
+      }
+
+      console.log('Output the evaluated result:', outputResult + '\n');
+      return outputResult; // Return the evaluated result
+    }
   }
-}
+};
+
 
 const handleInputStatements = async (
   trimmedLine: string,
