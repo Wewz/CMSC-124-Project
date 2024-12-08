@@ -26,7 +26,7 @@ const useTerminalEffects = (
   const clear = useSelector((state: RootState) => state.terminalMessage.clear)
 
   // Messages to print in terminal
-  const messages = useSelector((state: RootState) => state.terminalMessage.terminalMessage)
+  const messages = useSelector((state: RootState) => state.terminalMessage)
 
   // clears the terminal
   useEffect(() => {
@@ -47,10 +47,9 @@ const useTerminalEffects = (
       return // Skip if terminalInstance is undefined
     }
 
-    if (messages.length > 0) {
-      for (const { message, color } of messages) {
-        printColoredMessage(terminalInstanceRef.current, message, color)
-      }
+    if (messages.message !== '') {
+      printColoredMessage(terminalInstanceRef.current, messages.message, messages.color)
+
       dispatch(setClearTerminalMessage())
     }
   }, [messages, terminalInstanceRef, dispatch])
