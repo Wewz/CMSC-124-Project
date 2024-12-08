@@ -2,6 +2,7 @@ import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
 import { isLiteralOrIdentifier, evaluateExpression } from './expressionEvaluationHelper'
 import { requestUserInput, clearUserInput } from '@renderer/store/slices/userInputSlice'
 import store, { AppDispatch } from '@renderer/store/store'
+import { separateVisibleStatement } from './analyzerHelper'
 
 const handleVariableDeclaration = (
   trimmedLine: string,
@@ -93,12 +94,10 @@ const handleOutputStatements = (
 ) => {
   const match = trimmedLine.match(/^VISIBLE (.+)$/)
   if (match) {
-    const outputExpr = match[1].trim()
-    const parts = outputExpr.split(/(?<!\\)\+/).map((part) => part.trim())
-
+    const parts = separateVisibleStatement(match[1].trim())
     let outputResult = ''
 
-    console.log('Expression: ', match)
+    console.log('Expression in VISIVLE: ', parts)
 
     for (const part of parts) {
       try {
@@ -159,7 +158,6 @@ const handleInputStatements = async (
         }
       })
     })
-
     dispatch(clearUserInput())
 
     // Create a new object to avoid directly modifying the state

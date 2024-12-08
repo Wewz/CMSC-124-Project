@@ -116,6 +116,8 @@ const lexemeAnalyzer = (content: string, dispatch: AppDispatch) => {
     }
   })
 
+  console.log('Lexeme Errors', errors)
+
   lexemeData.sort((a, b) => a.position - b.position)
   dispatch(setErrors(errors))
   dispatch(setLexeme(lexemeData))

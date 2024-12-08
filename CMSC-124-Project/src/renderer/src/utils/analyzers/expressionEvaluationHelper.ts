@@ -135,8 +135,8 @@ const evaluateExpression = (
     { pattern: /EITHER OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a || b },
     { pattern: /WON OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a !== b },
     { pattern: /NOT ([^\s]+)/, operation: (a, b) => !a },
-    { pattern: /^ALL OF ([^\s]+)\s+AN\s+([^\s]+) (.+) MKAY/, operation: (a, b) => a && b },
-    { pattern: /^ANY OF ([^\s]+)\s+AN\s+([^\s]+) (.+) MKAY/, operation: (a, b) => a || b }
+    { pattern: /ALL OF ([^\s]+)\s+AN\s+([^\s]+) (.+) MKAY/, operation: (a, b) => a && b },
+    { pattern: /ANY OF ([^\s]+)\s+AN\s+([^\s]+) (.+) MKAY/, operation: (a, b) => a || b }
   ]
 
   // Comparison patterns
@@ -162,6 +162,8 @@ const evaluateExpression = (
         const match = currentExpression.match(pattern)
         if (match) {
           matched = true
+
+          console.log('Matched Expression', match)
 
           // Check if the left operand contains unresolved arithmetic keywords
           if (patternsKeywords.some((keyword) => keyword.test(match[1]))) {
@@ -260,6 +262,10 @@ const evaluateExpression = (
   // If no valid expression resolved
   if (currentExpression !== expression) {
     return evaluateExpression(currentExpression, symbolTable, lineNumber, errors)
+  }
+
+  if (currentExpression.match(/(.+) MKAY$/)) {
+    return { type: '', value: currentExpression }
   }
 
   // Invalid expression

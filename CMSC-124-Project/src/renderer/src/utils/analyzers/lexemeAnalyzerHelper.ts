@@ -1,5 +1,6 @@
 import { keywordClassifications } from './constants'
 import { Lexeme } from '@renderer/interfaces/interfaces'
+import { separateVisibleStatement } from './analyzerHelper'
 
 const matchKeywords = (
   content: string,
@@ -121,10 +122,9 @@ const handleVisibleStatements = (
 ) => {
   let match
   while ((match = visiblePattern.exec(content)) !== null) {
-    const expression = match[1].trim()
-
     // Split concatenated expression by '+' or whitespace
-    const parts = expression.split(/\s*\+\s*/g)
+    const parts = separateVisibleStatement(match[1].trim())
+
     parts.forEach((part) => {
       if (keywords.test(part)) {
         const keywordMatch = keywords.exec(part)
