@@ -49,4 +49,7 @@ const keywordClassifications: { [key: string]: string } = {
   'HOW IZ I': 'Function Call'
 }
 
-export { keywordClassifications }
+const validExpressionRegex =
+  /^(BOTH SAEM|DIFFRINT|SUM OF|DIFF OF|PRODUKT OF|QUOSHUNT OF|MOD OF|BIGGR OF|SMALLR OF|BOTH OF|EITHER OF|WON OF|NOT|ALL OF|ANY OF|BOTH SAEM|DIFFRINT|-?\d+$|-?\d+\.\d+$|(WIN|FAIL)$|".*")/
+
+export { keywordClassifications, validExpressionRegex }

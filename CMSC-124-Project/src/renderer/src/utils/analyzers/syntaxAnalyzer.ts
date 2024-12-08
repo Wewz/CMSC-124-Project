@@ -14,15 +14,20 @@ import {
   handleTypeCasting
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
+import { validExpressionRegex } from './constants'
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
-  let localSymbolTable: Record<string, SymbolTableEntry> = {}
+  let localSymbolTable: Record<string, SymbolTableEntry> = {
+    IT: { existingProperty: null, type: 'NOOB', value: null }
+  }
   const errors: { error: string; line: number }[] = []
   const lines = content.split('\n')
 
   let insideConditional = false
+  let conditionMet = false
   let insideLoop = false
   let insideFunction = false
+  let branchFound = false
   let insideWazzup = false
   let foundHai = false
   let foundWazzup = false
@@ -79,6 +84,35 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
+    // Handle conditionals
+    const status = handleConditionalStatements(
+      trimmedLine,
+      lineNumber,
+      insideConditional,
+      conditionMet,
+      branchFound,
+      localSymbolTable,
+      errors
+    )
+
+    insideConditional = status.insideConditional
+    conditionMet = status.conditionMet
+    branchFound = status.branchFound
+
+    console.log('Is inside IF-ELSE', insideConditional)
+
+    if (branchFound) {
+      branchFound = false
+      continue
+    }
+
+    if (insideConditional && !conditionMet) {
+      console.log(`Ignoring line ${lineNumber + 1} due to inactive branch`)
+      continue
+    }
+
+    console.log('Current Line: ', trimmedLine)
+
     // Handle variable assignments
     if (/^[A-Za-z][A-Za-z0-9_]* R /.test(trimmedLine)) {
       handleVariableAssignment(trimmedLine, lineNumber, localSymbolTable, errors)
@@ -107,112 +141,17 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
-    // Handle conditional statements
-    if (/^(BOTH SAEM|DIFFRINT)/.test(trimmedLine)) {
+    // Handle expression statements
+    if (validExpressionRegex.test(trimmedLine)) {
       const result = evaluateExpression(trimmedLine, localSymbolTable, lineNumber, errors)
-      let conditionMet = result.value === true // Boolean for branching
-      let conditionProcessed = false // Track if any condition was executed
 
-      // Check for O RLY? block
-      if (/^O RLY\?$/.test(lines[lineNumber + 1]?.trim())) {
-        lineNumber++ // Move to O RLY?
-        let insideORLY = true
-
-        while (insideORLY && lineNumber < lines.length - 1) {
-          lineNumber++
-          const nextLine = lines[lineNumber].trim()
-
-          // Enter YA RLY block
-          if (/^YA RLY$/.test(nextLine)) {
-            if (!conditionProcessed && conditionMet) {
-              conditionProcessed = true
-              while (lineNumber < lines.length - 1) {
-                lineNumber++
-                const innerLine = lines[lineNumber].trim()
-
-                if (/^NO WAI$/.test(innerLine) || /^OIC$/.test(innerLine)) break
-
-                // Process YA RLY block
-                await syntaxAnalyzer(innerLine, dispatch) // Process nested lines
-              }
-            } else {
-              // Skip YA RLY block
-              while (lineNumber < lines.length - 1) {
-                lineNumber++
-                if (
-                  /^NO WAI$/.test(lines[lineNumber].trim()) ||
-                  /^OIC$/.test(lines[lineNumber].trim())
-                )
-                  break
-              }
-            }
-            continue
-          }
-
-          // Enter MEBBE block
-          if (/^MEBBE$/.test(nextLine)) {
-            if (!conditionProcessed) {
-              const mebbeResult = evaluateExpression(nextLine, localSymbolTable, lineNumber, errors)
-              if (mebbeResult.value === true) {
-                conditionProcessed = true
-                while (lineNumber < lines.length - 1) {
-                  lineNumber++
-                  const innerLine = lines[lineNumber].trim()
-
-                  if (/^NO WAI$/.test(innerLine) || /^OIC$/.test(innerLine)) break
-
-                  // Process MEBBE block
-                  await syntaxAnalyzer(innerLine, dispatch) // Process nested lines
-                }
-              } else {
-                // Skip MEBBE block
-                while (lineNumber < lines.length - 1) {
-                  lineNumber++
-                  if (
-                    /^NO WAI$/.test(lines[lineNumber].trim()) ||
-                    /^OIC$/.test(lines[lineNumber].trim())
-                  )
-                    break
-                }
-              }
-            }
-            continue
-          }
-
-          // Enter NO WAI block
-          if (/^NO WAI$/.test(nextLine)) {
-            if (!conditionProcessed) {
-              conditionProcessed = true
-              while (lineNumber < lines.length - 1) {
-                lineNumber++
-                const innerLine = lines[lineNumber].trim()
-
-                if (/^OIC$/.test(innerLine)) break
-
-                // Process NO WAI block
-                await syntaxAnalyzer(innerLine, dispatch) // Process nested lines
-              }
-            } else {
-              // Skip NO WAI block
-              while (lineNumber < lines.length - 1) {
-                lineNumber++
-                if (/^OIC$/.test(lines[lineNumber].trim())) break
-              }
-            }
-            continue
-          }
-
-          // End O RLY block
-          if (/^OIC$/.test(nextLine)) {
-            insideORLY = false
-          }
-        }
-      } else {
-        errors.push({
-          error: `Conditional missing 'O RLY?' after: "${trimmedLine}"`,
-          line: lineNumber + 1
-        })
+      if (result.type !== 'ERROR') {
+        localSymbolTable['IT'].value = result.value
+        localSymbolTable['IT'].type = result.type
       }
+
+      console.log('Updated Variables: ', localSymbolTable)
+      continue
     }
 
     // Handle loops

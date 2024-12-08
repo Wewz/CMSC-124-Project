@@ -41,6 +41,8 @@ const parseYarnToNumber = (value: string) => {
 }
 
 const typecastValue = (value: any, type: string, context: string) => {
+  if (context === 'comparison') return { type, value }
+
   if (type === 'NOOB') {
     return context === 'arithmetic' ? { type: 'NUMBR', value: 0 } : { type: 'TROOF', value: false } // NOOB becomes FAIL/false for boolean/comparison
   }
@@ -67,7 +69,7 @@ const typecastValue = (value: any, type: string, context: string) => {
   }
 
   if (type === 'NUMBR' || type === 'NUMBAR') {
-    if (context === 'boolean' || context === 'comparison') {
+    if (context === 'boolean') {
       const isFalsy = value === 0 || value === '0'
       return { type: 'TROOF', value: !isFalsy } // Non-zero is WIN/true
     }
@@ -89,7 +91,7 @@ const evaluateExpression = (
   if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
   if (/^-?\d+\.\d+$/.test(expression)) return { type: 'NUMBAR', value: parseFloat(expression) }
   if (/^(WIN|FAIL)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
-  if (/^(true|false)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
+  if (/^(true|false)$/.test(expression)) return { type: 'TROOF', value: expression === 'true' }
   if (/^".*"$/.test(expression)) {
     const strippedValue = expression.slice(1, -1)
     const parsed = parseYarnToNumber(strippedValue)
@@ -273,4 +275,4 @@ const evaluateExpression = (
   return { type: 'ERROR', value: null }
 }
 
-export { isLiteralOrIdentifier, extractConditionalBlock, evaluateExpression }
+export { isLiteralOrIdentifier, extractConditionalBlock, evaluateExpression, typecastValue }

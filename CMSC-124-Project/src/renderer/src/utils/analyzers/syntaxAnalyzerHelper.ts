@@ -1,5 +1,9 @@
 import { SymbolTableEntry } from '@renderer/interfaces/interfaces'
-import { isLiteralOrIdentifier, evaluateExpression } from './expressionEvaluationHelper'
+import {
+  isLiteralOrIdentifier,
+  evaluateExpression,
+  typecastValue
+} from './expressionEvaluationHelper'
 import { requestUserInput, clearUserInput } from '@renderer/store/slices/userInputSlice'
 import store, { AppDispatch } from '@renderer/store/store'
 import { separateVisibleStatement } from './analyzerHelper'
@@ -175,21 +179,53 @@ const handleConditionalStatements = (
   trimmedLine: string,
   lineNumber: number,
   insideConditional: boolean,
+  conditionMet: boolean,
+  branchFound: boolean,
+  localSymbolTable: Record<string, SymbolTableEntry>,
   errors: { error: string; line: number }[]
 ) => {
   if (/^O RLY\?$/.test(trimmedLine)) {
-    insideConditional = true
-    return insideConditional
-  }
-  if (/^(YA RLY|MEBBE .+|NO WAI)$/.test(trimmedLine)) {
-    if (!insideConditional) {
+    if (insideConditional) {
       errors.push({
-        error: `'${trimmedLine}' found outside of a conditional block`,
+        error: `Nested conditionals are not allowed`,
         line: lineNumber + 1
       })
     }
-    return insideConditional
+    insideConditional = true
+    conditionMet = false // Initially, no branch is active
+    return { insideConditional, conditionMet, branchFound }
   }
+
+  if (/^YA RLY$/.test(trimmedLine)) {
+    if (!insideConditional) {
+      errors.push({
+        error: `'YA RLY' found outside of a conditional block`,
+        line: lineNumber + 1
+      })
+    } else if (
+      typecastValue(localSymbolTable['IT'].value, localSymbolTable['IT'].type, 'boolean').value
+    ) {
+      // Activate this branch if `IT` is truthy
+      conditionMet = true
+    }
+    branchFound = true
+    return { insideConditional, conditionMet, branchFound }
+  }
+
+  if (/^NO WAI$/.test(trimmedLine)) {
+    if (!insideConditional) {
+      errors.push({
+        error: `'NO WAI' found outside of a conditional block`,
+        line: lineNumber + 1
+      })
+    } else {
+      // Activate this branch only if `YA RLY` did not match
+      conditionMet = !conditionMet
+    }
+    branchFound = true
+    return { insideConditional, conditionMet, branchFound }
+  }
+
   if (/^OIC$/.test(trimmedLine)) {
     if (!insideConditional) {
       errors.push({
@@ -197,11 +233,14 @@ const handleConditionalStatements = (
         line: lineNumber + 1
       })
     } else {
+      // End the conditional block
       insideConditional = false
+      conditionMet = false
     }
-    return insideConditional
+    branchFound = true
+    return { insideConditional, conditionMet, branchFound }
   }
-  return insideConditional
+  return { insideConditional, conditionMet, branchFound }
 }
 
 const handleLoops = (
