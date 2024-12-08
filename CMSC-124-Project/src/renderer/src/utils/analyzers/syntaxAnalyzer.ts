@@ -24,7 +24,6 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     IT: { existingProperty: null, type: 'NOOB', value: null }
   }
   const errors: { error: string; line: number }[] = []
-  const lines = content.split('\n')
 
   let insideConditional = false
   let conditionMet = false
@@ -49,17 +48,23 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     bodyLine: ''
   }
 
+  const sanitizedContent = content.replace(/OBTW[\s\S]*?TLDR/g, '')
+  const lines = sanitizedContent.split('\n')
+
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
     // const terminal = new Terminal()
     const line = lines[lineNumber]
     const trimmedLine = line
+      // Remove single-line comments while preserving strings
       .replace(/"([^"]*)"|BTW.*/g, (match, string) => {
-        if (string !== undefined) return `"${string}"`
-        return ''
+        if (string !== undefined) return `"${string}"` // Preserve strings
+        return '' // Remove single-line comments
       })
       .trim()
 
     if (!trimmedLine) continue
+
+    console.log('Trimmed Line: ', trimmedLine)
 
     // Handle different line patterns
     if (/^HAI$/.test(trimmedLine)) {

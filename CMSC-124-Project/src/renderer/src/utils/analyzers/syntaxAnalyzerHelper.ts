@@ -287,6 +287,7 @@ const handleSwitch = (
       })
     } else if (!satisfyCondition && !swtichGTFO) {
       const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|OMG (".*?")|OMG (WIN|FAIL)$/)
+      console.log('Match: ', match)
       if (match) {
         let value
         if (match[1]) {
@@ -334,7 +335,7 @@ const handleSwitch = (
         error: `'GTFO' found outside of a switch block`,
         line: lineNumber + 1
       })
-    } else {
+    } else if (satisfyCondition) {
       satisfyCondition = false // Exit the current case
       swtichGTFO = true
     }
