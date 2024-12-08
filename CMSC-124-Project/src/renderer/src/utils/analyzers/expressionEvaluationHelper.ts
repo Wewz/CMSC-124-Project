@@ -114,11 +114,11 @@ const evaluateExpression = (
 
   // Arithmetic patterns for various operations
   const arithmeticPatterns = [
-    { pattern: /SUM OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a + b, type: 'NUMBR' },
-    { pattern: /DIFF OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a - b, type: 'NUMBR' },
     { pattern: /PRODUKT OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a * b, type: 'NUMBR' },
     { pattern: /QUOSHUNT OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a / b, type: 'NUMBR' },
     { pattern: /MOD OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a % b, type: 'NUMBR' },
+    { pattern: /SUM OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a + b, type: 'NUMBR' },
+    { pattern: /DIFF OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a - b, type: 'NUMBR' },
     {
       pattern: /BIGGR OF ([^\s]+)\s+AN\s+([^\s]+)/,
       operation: (a, b) => Math.max(a, b),
