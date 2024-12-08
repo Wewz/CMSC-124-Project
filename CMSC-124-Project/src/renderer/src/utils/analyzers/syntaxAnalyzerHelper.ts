@@ -193,6 +193,7 @@ const handleConditionalStatements = (
     }
     insideConditional = true
     conditionMet = false // Initially, no branch is active
+    branchFound = true
     return { insideConditional, conditionMet, branchFound }
   }
 
@@ -240,6 +241,7 @@ const handleConditionalStatements = (
     branchFound = true
     return { insideConditional, conditionMet, branchFound }
   }
+
   return { insideConditional, conditionMet, branchFound }
 }
 
@@ -265,6 +267,34 @@ const handleLoops = (
     return insideLoop
   }
   return insideLoop
+}
+
+const handleSwitch = (
+  trimmedLine: string,
+  lineNumber: number,
+  insideSwitch: boolean,
+  satisfyCondition: boolean,
+  branchFound: boolean,
+  localSymbolTable: Record<string, SymbolTableEntry>,
+  errors: { error: string; line: number }[]
+) => {
+  if (/^WTF?$/.test(trimmedLine)) {
+    insideSwitch = true
+    branchFound = true
+    return { insideSwitch, satisfyCondition, branchFound }
+  }
+
+  if (/^OMG /.test(trimmedLine)) {
+    const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|(".*?")|(WIN|FAIL)$/)
+
+    if (match) {
+      console.log('Matched Switch', match)
+    }
+
+    insideSwitch = true
+    branchFound = true
+    return { insideSwitch, satisfyCondition, branchFound }
+  }
 }
 
 const handleFunctionDeclarations = (
@@ -340,5 +370,6 @@ export {
   handleLoops,
   handleFunctionDeclarations,
   handleFunctionCalls,
-  handleTypeCasting
+  handleTypeCasting,
+  handleSwitch
 }

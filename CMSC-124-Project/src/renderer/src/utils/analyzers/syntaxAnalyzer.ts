@@ -31,6 +31,8 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let insideWazzup = false
   let foundHai = false
   let foundWazzup = false
+  let insideSwitch = false
+  let satisfyCondition = false
 
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
     const line = lines[lineNumber]
@@ -141,7 +143,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
-    // Handle expression statements
+    // Handle expression statements without assignment operation
     if (validExpressionRegex.test(trimmedLine)) {
       const result = evaluateExpression(trimmedLine, localSymbolTable, lineNumber, errors)
 
