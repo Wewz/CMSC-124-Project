@@ -12,7 +12,8 @@ import {
   handleFunctionDeclarations,
   handleFunctionCalls,
   handleTypeCasting,
-  handleSwitch
+  handleSwitch,
+  handleSMOOSH
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
 import { validExpressionRegex } from './constants'
@@ -133,6 +134,10 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
+    if (/^SMOOSH /.test(trimmedLine)) {
+      handleSMOOSH(trimmedLine, lineNumber, localSymbolTable, errors)
+      continue
+    }
     // Handle variable declarations
     if (/^I HAS A /.test(trimmedLine)) {
       handleVariableDeclaration(trimmedLine, lineNumber, localSymbolTable, errors, insideWazzup)
