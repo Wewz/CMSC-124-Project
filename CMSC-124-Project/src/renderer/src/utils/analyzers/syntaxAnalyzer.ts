@@ -11,7 +11,8 @@ import {
   handleLoops,
   handleFunctionDeclarations,
   handleFunctionCalls,
-  handleTypeCasting
+  handleTypeCasting,
+  handleSwitch
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
 import { validExpressionRegex } from './constants'
@@ -33,6 +34,8 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let foundWazzup = false
   let insideSwitch = false
   let satisfyCondition = false
+  let swtichBlock = false
+  let swtichGTFO = false
 
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
     const line = lines[lineNumber]
@@ -91,6 +94,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       trimmedLine,
       lineNumber,
       insideConditional,
+      insideSwitch,
       conditionMet,
       branchFound,
       localSymbolTable,
@@ -101,7 +105,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     conditionMet = status.conditionMet
     branchFound = status.branchFound
 
-    console.log('Is inside IF-ELSE', insideConditional)
+    console.log('Is inside IF-ELSE?', insideConditional)
 
     if (branchFound) {
       branchFound = false
@@ -109,6 +113,36 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     }
 
     if (insideConditional && !conditionMet) {
+      console.log(`Ignoring line ${lineNumber + 1} due to inactive branch`)
+      continue
+    }
+
+    // Handle switch statements
+    const switchResult = handleSwitch(
+      trimmedLine,
+      lineNumber,
+      insideSwitch,
+      insideConditional,
+      satisfyCondition,
+      swtichBlock,
+      swtichGTFO,
+      localSymbolTable,
+      errors
+    )
+
+    insideSwitch = switchResult.insideSwitch
+    satisfyCondition = switchResult.satisfyCondition
+    swtichBlock = switchResult.switchBlock
+    swtichGTFO = switchResult.swtichGTFO
+
+    console.log('Is inside SWITCH?', insideSwitch)
+
+    if (swtichBlock) {
+      swtichBlock = false
+      continue
+    }
+
+    if (insideSwitch && !satisfyCondition) {
       console.log(`Ignoring line ${lineNumber + 1} due to inactive branch`)
       continue
     }
@@ -154,6 +188,9 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
 
       console.log('Updated Variables: ', localSymbolTable)
       continue
+    } else if (localSymbolTable.hasOwnProperty(trimmedLine)) {
+      localSymbolTable['IT'].value = localSymbolTable[trimmedLine].value
+      localSymbolTable['IT'].type = localSymbolTable[trimmedLine].type
     }
 
     // Handle loops

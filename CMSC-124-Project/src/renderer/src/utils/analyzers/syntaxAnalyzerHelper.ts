@@ -179,15 +179,16 @@ const handleConditionalStatements = (
   trimmedLine: string,
   lineNumber: number,
   insideConditional: boolean,
+  insideSwitch: boolean,
   conditionMet: boolean,
   branchFound: boolean,
   localSymbolTable: Record<string, SymbolTableEntry>,
   errors: { error: string; line: number }[]
 ) => {
   if (/^O RLY\?$/.test(trimmedLine)) {
-    if (insideConditional) {
+    if (insideConditional || insideSwitch) {
       errors.push({
-        error: `Nested conditionals are not allowed`,
+        error: `Cannot start a new conditional block while another conditional or switch block is active`,
         line: lineNumber + 1
       })
     }
@@ -204,6 +205,7 @@ const handleConditionalStatements = (
         line: lineNumber + 1
       })
     } else if (
+      localSymbolTable['IT'] &&
       typecastValue(localSymbolTable['IT'].value, localSymbolTable['IT'].type, 'boolean').value
     ) {
       // Activate this branch if `IT` is truthy
@@ -228,7 +230,12 @@ const handleConditionalStatements = (
   }
 
   if (/^OIC$/.test(trimmedLine)) {
-    if (!insideConditional) {
+    if (insideSwitch) {
+      errors.push({
+        error: `'OIC' found inside a switch block; it should only be used to end a conditional block`,
+        line: lineNumber + 1
+      })
+    } else if (!insideConditional) {
       errors.push({
         error: `'OIC' found outside of a conditional block`,
         line: lineNumber + 1
@@ -243,6 +250,116 @@ const handleConditionalStatements = (
   }
 
   return { insideConditional, conditionMet, branchFound }
+}
+
+const handleSwitch = (
+  trimmedLine: string,
+  lineNumber: number,
+  insideSwitch: boolean,
+  insideConditional: boolean,
+  satisfyCondition: boolean,
+  switchBlock: boolean,
+  swtichGTFO: boolean,
+  localSymbolTable: Record<string, SymbolTableEntry>,
+  errors: { error: string; line: number }[]
+) => {
+  if (/^WTF\?$/.test(trimmedLine)) {
+    if (insideConditional || insideSwitch) {
+      errors.push({
+        error: `Cannot start a new switch block while another conditional or switch block is active`,
+        line: lineNumber + 1
+      })
+    }
+    insideSwitch = true
+    switchBlock = true
+    satisfyCondition = false
+    swtichGTFO = false
+    return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
+  }
+
+  if (/^OMG /.test(trimmedLine)) {
+    if (!insideSwitch) {
+      errors.push({
+        error: `'OMG' found outside of a switch block`,
+        line: lineNumber + 1
+      })
+    } else if (!satisfyCondition && !swtichGTFO) {
+      const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|OMG (".*?")|OMG (WIN|FAIL)$/)
+      if (match) {
+        let value
+        if (match[1]) {
+          value = Number(match[1])
+        } else if (match[3]) {
+          value = match[3].replace(/["\\]/g, '')
+        } else if (match[4]) {
+          value = match[4] === 'WIN'
+        } else {
+          value = localSymbolTable['IT']?.value
+        }
+
+        console.log(
+          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHHHHH',
+          value,
+          localSymbolTable['IT']?.value,
+          localSymbolTable['IT']?.value == value
+        )
+
+        if (localSymbolTable['IT']?.value == value) {
+          satisfyCondition = true
+          switchBlock = true
+        }
+      }
+    }
+    return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
+  }
+
+  if (/^OMGWTF$/.test(trimmedLine)) {
+    if (!insideSwitch) {
+      errors.push({
+        error: `'OMGWTF' found outside of a switch block`,
+        line: lineNumber + 1
+      })
+    } else if (!satisfyCondition && !swtichGTFO) {
+      satisfyCondition = true // Default branch activates if no other cases matched
+      switchBlock = true
+    }
+    return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
+  }
+
+  if (/^GTFO$/.test(trimmedLine)) {
+    if (!insideSwitch) {
+      errors.push({
+        error: `'GTFO' found outside of a switch block`,
+        line: lineNumber + 1
+      })
+    } else {
+      satisfyCondition = false // Exit the current case
+      swtichGTFO = true
+    }
+    return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
+  }
+
+  if (/^OIC$/.test(trimmedLine)) {
+    if (insideConditional) {
+      errors.push({
+        error: `'OIC' found inside a conditional block; it should only be used to end a switch block`,
+        line: lineNumber + 1
+      })
+    } else if (!insideSwitch) {
+      errors.push({
+        error: `'OIC' found outside of a switch block`,
+        line: lineNumber + 1
+      })
+    } else {
+      // End the switch block
+      insideSwitch = false
+      satisfyCondition = false
+      swtichGTFO = false
+    }
+    return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
+  }
+
+  return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
 }
 
 const handleLoops = (
@@ -267,34 +384,6 @@ const handleLoops = (
     return insideLoop
   }
   return insideLoop
-}
-
-const handleSwitch = (
-  trimmedLine: string,
-  lineNumber: number,
-  insideSwitch: boolean,
-  satisfyCondition: boolean,
-  branchFound: boolean,
-  localSymbolTable: Record<string, SymbolTableEntry>,
-  errors: { error: string; line: number }[]
-) => {
-  if (/^WTF?$/.test(trimmedLine)) {
-    insideSwitch = true
-    branchFound = true
-    return { insideSwitch, satisfyCondition, branchFound }
-  }
-
-  if (/^OMG /.test(trimmedLine)) {
-    const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|(".*?")|(WIN|FAIL)$/)
-
-    if (match) {
-      console.log('Matched Switch', match)
-    }
-
-    insideSwitch = true
-    branchFound = true
-    return { insideSwitch, satisfyCondition, branchFound }
-  }
 }
 
 const handleFunctionDeclarations = (
