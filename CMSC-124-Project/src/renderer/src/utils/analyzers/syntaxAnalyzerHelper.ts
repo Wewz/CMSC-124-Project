@@ -338,8 +338,7 @@ const handleSMOOSH = (
   trimmedLine: string,
   lineNumber: number,
   localSymbolTable: Record<string, SymbolTableEntry>,
-  errors: { error: string; line: number }[],
-  functionState: functionState
+  errors: { error: string; line: number }[]
 ) => {
   const smooshMatch = trimmedLine.match(/^SMOOSH (.+)$/);
   if (smooshMatch) {
@@ -404,5 +403,6 @@ export {
   handleLoops,
   handleFunctionDeclarations,
   handleFunctionCalls,
-  handleTypeCasting
+  handleTypeCasting,
+  handleSMOOSH
 }

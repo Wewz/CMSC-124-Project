@@ -11,7 +11,8 @@ import {
   handleLoops,
   handleFunctionDeclarations,
   handleFunctionCalls,
-  handleTypeCasting
+  handleTypeCasting,
+  handleSMOOSH
 } from './syntaxAnalyzerHelper'
 import { printColoredMessage } from '../ui-helpers/terminalFunctions'
 import { Terminal } from 'xterm'
@@ -86,7 +87,10 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       }
       continue
     }
-
+    if (/^SMOOSH /.test(trimmedLine)) {
+      handleSMOOSH(trimmedLine, lineNumber, localSymbolTable, errors)
+      continue
+    }
     // Handle variable declarations
     if (/^I HAS A /.test(trimmedLine)) {
       handleVariableDeclaration(trimmedLine, lineNumber, localSymbolTable, errors, insideWazzup)
