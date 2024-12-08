@@ -159,6 +159,7 @@ const handleInputStatements = async (
         }
       })
     })
+
     dispatch(clearUserInput())
 
     // Create a new object to avoid directly modifying the state

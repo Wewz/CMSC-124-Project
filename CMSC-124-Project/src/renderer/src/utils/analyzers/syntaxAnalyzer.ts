@@ -15,10 +15,9 @@ import {
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
 
-let localSymbolTable: Record<string, SymbolTableEntry> = {}
-const errors: { error: string; line: number }[] = []
-
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
+  let localSymbolTable: Record<string, SymbolTableEntry> = {}
+  const errors: { error: string; line: number }[] = []
   const lines = content.split('\n')
 
   let insideConditional = false
