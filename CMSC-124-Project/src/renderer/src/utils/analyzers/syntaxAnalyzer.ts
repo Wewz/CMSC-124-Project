@@ -12,7 +12,7 @@ import {
   handleFunctionDeclarations,
   handleFunctionCalls,
   handleTypeCasting,
-  handleSwitch
+  handleSwitch,
   handleSMOOSH
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
