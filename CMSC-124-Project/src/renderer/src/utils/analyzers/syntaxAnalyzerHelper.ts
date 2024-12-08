@@ -159,10 +159,17 @@ const handleInputStatements = async (
         }
       })
     })
+
     dispatch(clearUserInput())
 
-    // Directly modify the local symbol table
-    localSymbolTable[variable] = { type: 'YARN', value: userInput, existingProperty: null }
+    // Create a new object to avoid directly modifying the state
+    const updatedSymbolTable = {
+      ...localSymbolTable,
+      [variable]: { type: 'YARN', value: userInput, existingProperty: null }
+    }
+
+    // Return the updated symbol table
+    return updatedSymbolTable
   }
 }
 
