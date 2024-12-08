@@ -16,6 +16,8 @@ import {
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
 import { validExpressionRegex } from './constants'
+import { setTerminalMessage } from '@renderer/store/slices/terminalMessageSlice'
+import { functionList, functionState } from '@renderer/interfaces/interfaces'
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let localSymbolTable: Record<string, SymbolTableEntry> = {
@@ -37,7 +39,18 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let swtichBlock = false
   let swtichGTFO = false
 
+  const functionList: functionList = {
+    functions: []
+  }
+
+  const functionState: functionState = {
+    func_name: '',
+    parameters: [],
+    bodyLine: ''
+  }
+
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
+    // const terminal = new Terminal()
     const line = lines[lineNumber]
     const trimmedLine = line
       .replace(/"([^"]*)"|BTW.*/g, (match, string) => {
@@ -148,6 +161,11 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     }
 
     console.log('Current Line: ', trimmedLine)
+    //concatenante string
+    // if(insideFunction == true){
+    //   functionState.bodyLine.push(trimmedLine)
+    //   continue
+    // }
 
     // Handle variable assignments
     if (/^[A-Za-z][A-Za-z0-9_]* R /.test(trimmedLine)) {
@@ -157,7 +175,15 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
 
     // Handle output statements
     if (/^VISIBLE /.test(trimmedLine)) {
-      handleOutputStatements(trimmedLine, lineNumber, localSymbolTable, errors)
+      const outputMessage = handleOutputStatements(
+        trimmedLine,
+        lineNumber,
+        localSymbolTable,
+        errors
+      )
+      if (outputMessage) {
+        dispatch(setTerminalMessage({ message: outputMessage ?? 'invalid', color: 'green' }))
+      }
       continue
     }
 
@@ -197,8 +223,15 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
 
     // Handle function declarations
-    insideFunction = handleFunctionDeclarations(trimmedLine, lineNumber, insideFunction, errors)
-
+    insideFunction = handleFunctionDeclarations(
+      trimmedLine,
+      lineNumber,
+      insideFunction,
+      errors,
+      functionList,
+      functionState
+    )
+    console.log(functionList)
     // Handle function calls
     if (/^I IZ /.test(trimmedLine)) {
       handleFunctionCalls(trimmedLine, lineNumber, errors)

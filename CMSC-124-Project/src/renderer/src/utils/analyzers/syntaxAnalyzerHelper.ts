@@ -7,6 +7,7 @@ import {
 import { requestUserInput, clearUserInput } from '@renderer/store/slices/userInputSlice'
 import store, { AppDispatch } from '@renderer/store/store'
 import { separateVisibleStatement } from './analyzerHelper'
+import { functionList, functionState } from '@renderer/interfaces/interfaces'
 
 const handleVariableDeclaration = (
   trimmedLine: string,
@@ -123,6 +124,7 @@ const handleOutputStatements = (
     }
 
     console.log('Output the evaluated result', outputResult + '\n')
+    return outputResult
   }
 }
 
@@ -390,12 +392,36 @@ const handleFunctionDeclarations = (
   trimmedLine: string,
   lineNumber: number,
   insideFunction: boolean,
-  errors: { error: string; line: number }[]
+  errors: { error: string; line: number }[],
+  functionList: functionList,
+  functionState: functionState
 ) => {
+  if (functionState.bodyLine) {
+    functionState.bodyLine += '\n' + trimmedLine // If bodyLine is not empty, add a newline before appending
+  } else {
+    functionState.bodyLine = trimmedLine // If bodyLine is empty, just set the line
+  }
   if (/^HOW IZ I /.test(trimmedLine)) {
+    const functionNameMatch = trimmedLine.match(/^HOW IZ I ([A-Za-z][A-Za-z0-9_]*)/)
+    if (functionNameMatch) {
+      functionState.func_name = functionNameMatch[1]
+    }
+    const parametersPart = trimmedLine.replace(/^HOW IZ I [A-Za-z][A-Za-z0-9_]*/, '').trim()
+    if (parametersPart) {
+      // Remove leading "YR" if it exists, and then split by " YR "
+      const parameters = parametersPart
+        .replace(/^YR /, '')
+        .split(' YR ')
+        .map((param) => param.replace(/\s*AN\s*/, '').trim())
+        .filter((param) => param)
+
+      functionState.parameters = parameters
+      // console.log("Parameters: ", functionState.parameters);
+    }
     insideFunction = true
     return insideFunction
   }
+
   if (/^IF U SAY SO$/.test(trimmedLine)) {
     if (!insideFunction) {
       errors.push({
@@ -403,6 +429,10 @@ const handleFunctionDeclarations = (
         line: lineNumber + 1
       })
     } else {
+      console.log('name: ', functionState.func_name)
+      console.log('params: ', functionState.parameters)
+      console.log('body: ', functionState.bodyLine)
+      functionList.functions.push({ ...functionState }) //append to function list
       insideFunction = false
     }
     return insideFunction
@@ -422,6 +452,7 @@ const handleFunctionCalls = (
       line: lineNumber + 1
     })
   }
+  console.log('Trimmed Lime: ', match)
 }
 
 const handleTypeCasting = (

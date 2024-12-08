@@ -18,4 +18,14 @@ interface ErrorType {
   line: number
 }
 
-export type { Lexeme, SymbolTableEntry, ErrorType }
+interface functionState {
+  func_name: string,
+  parameters: string[],
+  bodyLine: string
+ }
+ 
+ interface functionList {
+   functions: functionState[]
+ }
+
+export type { Lexeme, SymbolTableEntry, ErrorType, functionList, functionState }
