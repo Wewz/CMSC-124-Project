@@ -102,7 +102,7 @@ const handleOutputStatements = (
     const parts = separateVisibleStatement(match[1].trim())
     let outputResult = ''
 
-    console.log('Expression in VISIVLE: ', parts)
+    // console.log('Expression in VISIVLE: ', parts)
 
     for (const part of parts) {
       try {
@@ -111,6 +111,9 @@ const handleOutputStatements = (
         } else {
           const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors)
           outputResult += evalResult.value.toString()
+
+          localSymbolTable['IT'].type = evalResult.type
+          localSymbolTable['IT'].value = evalResult.value
 
           console.log(`Expression evaluation result: ${part} = ${outputResult}`)
         }
@@ -279,12 +282,12 @@ const handleSwitch = (
     return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
   }
 
-  console.log(
-    'Switch Blocked',
-    trimmedLine,
-    /^OMG /.test(trimmedLine.trim()),
-    !satisfyCondition && !swtichGTFO
-  )
+  // console.log(
+  //   'Switch Blocked',
+  //   trimmedLine,
+  //   /^OMG /.test(trimmedLine.trim()),
+  //   !satisfyCondition && !swtichGTFO
+  // )
 
   if (/^OMG /.test(trimmedLine.trim())) {
     if (!insideSwitch) {
@@ -295,7 +298,7 @@ const handleSwitch = (
     } else if (!satisfyCondition && !swtichGTFO) {
       const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|OMG (".*?")|OMG (WIN|FAIL)$/)
 
-      console.log('Switch Matched Expression', match)
+      // console.log('Switch Matched Expression', match)
 
       if (match) {
         let value: any
@@ -307,7 +310,7 @@ const handleSwitch = (
           value = match[3] === 'WIN' // Boolean case
         }
 
-        console.log('Switch Status', value, localSymbolTable['IT']?.value === value)
+        // console.log('Switch Status', value, localSymbolTable['IT']?.value === value)
 
         // Compare IT value
         if (localSymbolTable['IT']?.value == value) {
@@ -396,34 +399,34 @@ const handleFunctionDeclarations = (
   trimmedLine: string,
   lineNumber: number,
   insideFunction: boolean,
-  errors: { error: string; line: number }[],
+  functionEnd: boolean,
+  funtionBlock: boolean,
   functionList: functionList,
-  functionState: functionState
+  functionState: functionState,
+  errors: { error: string; line: number }[]
 ) => {
-  if (functionState.bodyLine) {
-    functionState.bodyLine += '\n' + trimmedLine // If bodyLine is not empty, add a newline before appending
-  } else {
-    functionState.bodyLine = trimmedLine // If bodyLine is empty, just set the line
-  }
   if (/^HOW IZ I /.test(trimmedLine)) {
-    const functionNameMatch = trimmedLine.match(/^HOW IZ I ([A-Za-z][A-Za-z0-9_]*)/)
-    if (functionNameMatch) {
-      functionState.func_name = functionNameMatch[1]
+    const match = trimmedLine.match(/^HOW IZ I ([A-Za-z][A-Za-z0-9_]*) (.+)/)
+    if (match) {
+      functionState.func_name = match[1]
+      if (match[2]) {
+        const parameters = match[2].split('AN')
+        for (const parameter of parameters) {
+          const cleanedParameter = parameter.trim().match(/^YR ([A-Za-z][A-Za-z0-9_]*)$/)
+          if (cleanedParameter && cleanedParameter[1]) {
+            functionState.parameters.push(cleanedParameter[1])
+          }
+        }
+      }
     }
-    const parametersPart = trimmedLine.replace(/^HOW IZ I [A-Za-z][A-Za-z0-9_]*/, '').trim()
-    if (parametersPart) {
-      // Remove leading "YR" if it exists, and then split by " YR "
-      const parameters = parametersPart
-        .replace(/^YR /, '')
-        .split(' YR ')
-        .map((param) => param.replace(/\s*AN\s*/, '').trim())
-        .filter((param) => param)
-
-      functionState.parameters = parameters
-      // console.log("Parameters: ", functionState.parameters);
-    }
+    funtionBlock = true
     insideFunction = true
-    return insideFunction
+    functionEnd = false
+
+    return {
+      insideFunction,
+      funtionBlock
+    }
   }
 
   if (/^IF U SAY SO$/.test(trimmedLine)) {
@@ -433,30 +436,108 @@ const handleFunctionDeclarations = (
         line: lineNumber + 1
       })
     } else {
-      console.log('name: ', functionState.func_name)
-      console.log('params: ', functionState.parameters)
-      console.log('body: ', functionState.bodyLine)
-      functionList.functions.push({ ...functionState }) //append to function list
+      if (
+        !/^GTFO$/.test(functionState.bodyLine[functionState.bodyLine.length - 1]) &&
+        !/^FOUND YR /.test(functionState.bodyLine[functionState.bodyLine.length - 1])
+      ) {
+        functionState.bodyLine.push('GTFO')
+      }
+      // Append to function list
+      functionList.functions.push({ ...functionState })
+
+      // Reset function state
+      functionState.func_name = ''
+      functionState.bodyLine = []
+      functionState.parameters = []
+
       insideFunction = false
+      funtionBlock = true
+      console.log('UPDATED FUNCTION', functionList)
     }
-    return insideFunction
+    return {
+      insideFunction,
+      funtionBlock
+    }
   }
-  return insideFunction
+
+  if (insideFunction) {
+    functionState.bodyLine.push(trimmedLine)
+  }
+
+  return {
+    insideFunction,
+    funtionBlock
+  }
 }
+
+const addNewVar = (expression: string, localSymbolTable: Record<string, SymbolTableEntry>) => {}
 
 const handleFunctionCalls = (
   trimmedLine: string,
   lineNumber: number,
+  functionList: functionList,
+  functionRunning: boolean,
+  localSymbolTable: Record<string, SymbolTableEntry>,
   errors: { error: string; line: number }[]
 ) => {
-  const match = trimmedLine.match(/^I IZ ([A-Za-z][A-Za-z0-9_]*)(?: YR .+)? MKAY$/)
+  const match = trimmedLine.match(/^I IZ ([A-Za-z][A-Za-z0-9_]*) (.+)/)
+
+  let func: functionState | undefined
+
   if (!match) {
     errors.push({
       error: `Invalid function call syntax: "${trimmedLine}"`,
       line: lineNumber + 1
     })
+  } else {
+    console.log('Function Declarations', match)
+
+    for (const fun of functionList.functions) {
+      if (match[1] && match[1].trim() === fun.func_name) {
+        func = fun
+        functionRunning = true
+        break
+      }
+    }
+
+    if (!func) return { functionRunning, func }
+
+    if (match[2]) {
+      let newVars = match[2].replace('MKAY', '').trim()
+
+      if (func.parameters.length > 1) {
+        for (const parameter of func.parameters) {
+          let variable = newVars.match(/^YR (.+) AN YR/)
+
+          if (!variable) {
+            variable = newVars.match(/^YR (.+)$/)
+          }
+
+          if (variable && variable[1]) {
+            const result = evaluateExpression(variable[1], localSymbolTable, lineNumber, errors)
+
+            if (result.type === 'ERROR') return { functionRunning, func }
+
+            localSymbolTable[parameter] = {
+              type: result.type,
+              value: result.value,
+              existingProperty: null
+            }
+
+            newVars = newVars.replace('YR ' + variable[1], '').trim()
+
+            if (/^AN /.test(newVars)) {
+              newVars = newVars.replace('AN', '').trim()
+            }
+          }
+
+          console.log('NEW VARIABLES', localSymbolTable, newVars)
+        }
+      }
+    }
   }
-  console.log('Trimmed Lime: ', match)
+
+  return { functionRunning, func }
 }
 
 const handleTypeCasting = (

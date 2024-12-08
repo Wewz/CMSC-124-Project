@@ -28,15 +28,24 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let insideConditional = false
   let conditionMet = false
   let insideLoop = false
-  let insideFunction = false
   let branchFound = false
   let insideWazzup = false
   let foundHai = false
   let foundWazzup = false
+
+  // switch
   let insideSwitch = false
   let satisfyCondition = false
   let swtichBlock = false
   let swtichGTFO = false
+
+  // functions declaration
+  let insideFunction = false
+  let functionEnd = false
+  let functionBlock = false
+
+  // function call
+  let functionRunning = false
 
   const functionList: functionList = {
     functions: []
@@ -45,7 +54,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   const functionState: functionState = {
     func_name: '',
     parameters: [],
-    bodyLine: ''
+    bodyLine: []
   }
 
   const sanitizedContent = content.replace(/OBTW[\s\S]*?TLDR/g, '')
@@ -101,11 +110,59 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
+    if (/^GTFO$/.test(trimmedLine) && functionRunning) {
+      localSymbolTable['IT'].type = ''
+      localSymbolTable['IT'].value = 'NOOB'
+      functionRunning = false
+      continue
+    }
+
+    if (/^FOUND YR /.test(trimmedLine) && functionRunning) {
+      const match = trimmedLine.match(/^FOUND YR (.+)$/)
+
+      if (match && match[1]) {
+        const result = evaluateExpression(match[1], localSymbolTable, lineNumber, errors)
+
+        if (result.type !== 'ERROR') {
+          localSymbolTable['IT'].type = result.type
+          localSymbolTable['IT'].value = result.value
+        }
+      }
+      console.log('RETURRRRRRRRRRRRRRRRRNNNNNNNNNNN', match)
+
+      functionRunning = false
+      continue
+    }
+
     // Handle variable declarations
     if (/^I HAS A /.test(trimmedLine)) {
       handleVariableDeclaration(trimmedLine, lineNumber, localSymbolTable, errors, insideWazzup)
       continue
     }
+
+    // Handle function declarations
+    const functionResult = handleFunctionDeclarations(
+      trimmedLine,
+      lineNumber,
+      insideFunction,
+      functionEnd,
+      functionBlock,
+      functionList,
+      functionState,
+      errors
+    )
+
+    console.log(functionList)
+
+    functionBlock = functionResult.funtionBlock
+    insideFunction = functionResult.insideFunction
+
+    if (functionBlock) {
+      functionBlock = false
+      continue
+    }
+
+    if (insideFunction) continue
 
     // Handle conditionals
     const status = handleConditionalStatements(
@@ -227,19 +284,28 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     // Handle loops
     insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
 
-    // Handle function declarations
-    insideFunction = handleFunctionDeclarations(
-      trimmedLine,
-      lineNumber,
-      insideFunction,
-      errors,
-      functionList,
-      functionState
-    )
-    console.log(functionList)
     // Handle function calls
     if (/^I IZ /.test(trimmedLine)) {
-      handleFunctionCalls(trimmedLine, lineNumber, errors)
+      const result = handleFunctionCalls(
+        trimmedLine,
+        lineNumber,
+        functionList,
+        functionRunning,
+        localSymbolTable,
+        errors
+      )
+
+      functionRunning = result.functionRunning
+      let func: functionState
+
+      if (functionRunning && result.func) {
+        func = result.func
+
+        for (const funcLine of func.bodyLine) {
+          lines.splice(lineNumber + 1, 0, funcLine)
+        }
+      }
+
       continue
     }
 
