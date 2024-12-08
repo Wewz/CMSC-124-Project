@@ -29,6 +29,10 @@ const extractConditionalBlock = (lines: string[], startLine: number): { valid: b
   return { valid: hasYaRly && hasOic }
 }
 
+const escapeRegex = (string: string) => {
+  return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
 // Helper function to parse YARN as a number
 const parseYarnToNumber = (value: string) => {
   if (/^-?\d+$/.test(value)) return { type: 'NUMBR', value: parseInt(value, 10) }
@@ -36,30 +40,41 @@ const parseYarnToNumber = (value: string) => {
   return null
 }
 
-const typecastValue = (
-  value: any,
-  type: string,
-  context: 'arithmetic' | 'boolean' | 'comparison'
-): { type: string; value: any } => {
+const typecastValue = (value: any, type: string, context: string) => {
   if (type === 'NOOB') {
-    return context === 'arithmetic' ? { type: 'NUMBR', value: 0 } : { type: 'TROOF', value: false }
+    return context === 'arithmetic' ? { type: 'NUMBR', value: 0 } : { type: 'TROOF', value: false } // NOOB becomes FAIL/false for boolean/comparison
   }
+
+  console.log('Values to be typecast', value, type, context)
 
   if (type === 'TROOF') {
+    console.log('Return Value', value === true || value === 'WIN' ? 1 : 0, context === 'arithmetic')
+    return context === 'arithmetic'
+      ? { type: 'NUMBR', value: value === true || value === 'WIN' ? 1 : 0 }
+      : { type: 'TROOF', value: value === true || value === 'WIN' }
+  }
+
+  if (type === 'YARN') {
+    const parsed = parseYarnToNumber(value)
+    if (parsed) {
+      return typecastValue(parsed.value, parsed.type, context)
+    }
+    const isFalsy = value === '' // Empty strings are FAIL/false
     return {
-      type: 'NUMBR',
-      value: value === true ? 1 : 0
+      type: context === 'arithmetic' ? 'NUMBR' : 'TROOF',
+      value: context === 'arithmetic' ? 0 : !isFalsy
     }
   }
 
-  if (type === 'YARN' || type === 'NUMBR' || type === 'NUMBAR') {
+  if (type === 'NUMBR' || type === 'NUMBAR') {
     if (context === 'boolean' || context === 'comparison') {
-      const isFalsy = value === '' || value === 0 || value === '0'
-      return { type: 'TROOF', value: !isFalsy }
+      const isFalsy = value === 0 || value === '0'
+      return { type: 'TROOF', value: !isFalsy } // Non-zero is WIN/true
     }
+    return { type, value }
   }
 
-  return { type, value }
+  return { type, value } // Return as-is if no special rules apply
 }
 
 const evaluateExpression = (
@@ -74,7 +89,7 @@ const evaluateExpression = (
   if (/^-?\d+$/.test(expression)) return { type: 'NUMBR', value: parseInt(expression, 10) }
   if (/^-?\d+\.\d+$/.test(expression)) return { type: 'NUMBAR', value: parseFloat(expression) }
   if (/^(WIN|FAIL)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
-  if (/^(true|false)$/.test(expression)) return { type: 'TROOF', value: expression === 'true' }
+  if (/^(true|false)$/.test(expression)) return { type: 'TROOF', value: expression === 'WIN' }
   if (/^".*"$/.test(expression)) {
     const strippedValue = expression.slice(1, -1)
     const parsed = parseYarnToNumber(strippedValue)
@@ -97,67 +112,119 @@ const evaluateExpression = (
 
   // Arithmetic patterns for various operations
   const arithmeticPatterns = [
-    { pattern: /SUM OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a + b, type: 'NUMBR' },
-    { pattern: /DIFF OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a - b, type: 'NUMBR' },
-    { pattern: /PRODUKT OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a * b, type: 'NUMBR' },
-    { pattern: /QUOSHUNT OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a / b, type: 'NUMBR' },
-    { pattern: /MOD OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a % b, type: 'NUMBR' },
-    { pattern: /BIGGR OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => Math.max(a, b), type: 'NUMBR' },
-    { pattern: /SMALLR OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => Math.min(a, b), type: 'NUMBR' }
+    { pattern: /SUM OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a + b, type: 'NUMBR' },
+    { pattern: /DIFF OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a - b, type: 'NUMBR' },
+    { pattern: /PRODUKT OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a * b, type: 'NUMBR' },
+    { pattern: /QUOSHUNT OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a / b, type: 'NUMBR' },
+    { pattern: /MOD OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a % b, type: 'NUMBR' },
+    {
+      pattern: /BIGGR OF ([^\s]+)\s+AN\s+([^\s]+)/,
+      operation: (a, b) => Math.max(a, b),
+      type: 'NUMBR'
+    },
+    {
+      pattern: /SMALLR OF ([^\s]+)\s+AN\s+([^\s]+)/,
+      operation: (a, b) => Math.min(a, b),
+      type: 'NUMBR'
+    }
   ]
 
   // Logical patterns
   const logicalPatterns = [
-    { pattern: /BOTH OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a && b },
-    { pattern: /EITHER OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a || b },
-    { pattern: /WON OF (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a !== b },
-    { pattern: /NOT (\w+)/, operation: (a, b) => !a },
-    { pattern: /^ALL OF (\w+)\s+AN\s+(\w+) (.+) MKAY/, operation: (a, b) => a && b },
-    { pattern: /^ANY OF (\w+)\s+AN\s+(\w+) (.+) MKAY/, operation: (a, b) => a || b }
+    { pattern: /BOTH OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a && b },
+    { pattern: /EITHER OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a || b },
+    { pattern: /WON OF ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a !== b },
+    { pattern: /NOT ([^\s]+)/, operation: (a, b) => !a },
+    { pattern: /^ALL OF ([^\s]+)\s+AN\s+([^\s]+) (.+) MKAY/, operation: (a, b) => a && b },
+    { pattern: /^ANY OF ([^\s]+)\s+AN\s+([^\s]+) (.+) MKAY/, operation: (a, b) => a || b }
   ]
 
   // Comparison patterns
   const comparisonPatterns = [
-    { pattern: /BOTH SAEM (\w+)\s+AN\s+(\w+)/, operation: (a, b) => a === b },
-    { pattern: /DIFFRINT(\w+)\s+AN\s+(\w+)/, operation: (a, b) => a !== b }
+    { pattern: /BOTH SAEM ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a === b },
+    { pattern: /DIFFRINT ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a !== b }
   ]
 
   const arithmeticKeywords = [/SUM/, /DIFF/, /PRODUKT/, /QUOSHUNT/, /MOD/, /BIGGR/, /SMALLR/]
-  const logicalKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /BOTH/, /DIFFRINT/]
+  const logicalKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /DIFFRINT/]
   const comparisonKeywords = [/BOTH/, /DIFFRINT/]
 
   // Recursive evaluation for arithmetic, logical, and comparison operations
-  const recursiveEvaluation = (patterns: any[], patternsKeywords: any[]) => {
+  const recursiveEvaluation = (
+    patterns: any[],
+    patternsKeywords: any[],
+    operation_type: string
+  ) => {
     do {
       matched = false
+
       for (const { pattern, operation } of patterns) {
         const match = currentExpression.match(pattern)
         if (match) {
           matched = true
 
-          // console.log('Matched Expression', match)
-
-          if (patternsKeywords.some((keyword) => match[1].includes(keyword.source))) {
+          // Check if the left operand contains unresolved arithmetic keywords
+          if (patternsKeywords.some((keyword) => keyword.test(match[1]))) {
             matched = false
             continue
           }
 
-          if (patternsKeywords.some((keyword) => match[2]?.includes(keyword.source))) {
+          // Check if the right operand contains unresolved arithmetic keywords
+          if (match[2] && patternsKeywords.some((keyword) => keyword.test(match[2]))) {
+            const compoundExpression = match[0].match(/(.+)\s+(\w+)/)
+            const tempExpression = expression
+
+            if (!compoundExpression || !compoundExpression[1]) return
+
+            const escapedCompoundExpression = escapeRegex(compoundExpression[1])
+            let subExpression = tempExpression.match(
+              new RegExp(`${escapedCompoundExpression}\\s+(.+)`)
+            )
+
+            if (!subExpression) {
+              subExpression = currentExpression.match(
+                new RegExp(`${escapedCompoundExpression}\\s+(.+)`)
+              )
+            }
+
+            if (!subExpression || !subExpression[1]) return
+
+            const subExpressionResult = evaluateExpression(
+              subExpression[1].trim(),
+              symbolTable,
+              lineNumber,
+              errors
+            )
+
+            currentExpression = currentExpression.replace(
+              subExpression[0],
+              subExpressionResult.value.toString()
+            )
+
             matched = false
             continue
           }
 
-          const left = evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors)
+          const left = typecastValue(
+            evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors).value,
+            evaluateExpression(match[1].trim(), symbolTable, lineNumber, errors).type,
+            operation_type
+          )
+
           const right = match[2]
-            ? evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors)
+            ? typecastValue(
+                evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors).value,
+                evaluateExpression(match[2].trim(), symbolTable, lineNumber, errors).type,
+                operation_type
+              )
             : null
 
           // Type validation
           if (
             (patterns === arithmeticPatterns &&
-              left.type === 'NUMBR' &&
+              (left.type === 'NUMBR' || left.type === 'NUMBAR') &&
               right &&
-              right.type === 'NUMBR') ||
+              (right.type === 'NUMBR' || right.type === 'NUMBAR')) ||
             (patterns === logicalPatterns &&
               left.type === 'TROOF' &&
               (!right || right.type === 'TROOF')) ||
@@ -165,6 +232,7 @@ const evaluateExpression = (
           ) {
             const result = operation(left.value, right ? right.value : undefined)
             currentExpression = currentExpression.replace(match[0], result.toString())
+            // console.log(`${right?.value} ${operation_type} ${left.value} = ${result}`)
           } else {
             const patternName =
               patterns === logicalPatterns
@@ -185,9 +253,9 @@ const evaluateExpression = (
   }
 
   // Perform recursive evaluation for each type of operation
-  recursiveEvaluation(arithmeticPatterns, arithmeticKeywords)
-  recursiveEvaluation(logicalPatterns, logicalKeywords)
-  recursiveEvaluation(comparisonPatterns, comparisonKeywords)
+  recursiveEvaluation(arithmeticPatterns, arithmeticKeywords, 'arithmetic')
+  recursiveEvaluation(logicalPatterns, logicalKeywords, 'boolean')
+  recursiveEvaluation(comparisonPatterns, comparisonKeywords, 'comparison')
 
   // If no valid expression resolved
   if (currentExpression !== expression) {
