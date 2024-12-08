@@ -6,10 +6,7 @@ import {
   handleCommand,
   prompt
 } from '@renderer/utils/ui-helpers/terminalFunctions'
-import {
-  setClearTerminal,
-  setClearTerminalMessage
-} from '@renderer/store/slices/terminalMessageSlice'
+import { setClearTerminal, setShownMessages } from '@renderer/store/slices/terminalMessageSlice'
 import { setShowErrors } from '@renderer/store/slices/errorSlice'
 
 const useTerminalEffects = (
@@ -43,14 +40,20 @@ const useTerminalEffects = (
 
   // printing messages in terminal
   useEffect(() => {
-    if (!terminalInstanceRef.current) {
-      return // Skip if terminalInstance is undefined
-    }
+    if (!terminalInstanceRef.current) return // Skip if terminalInstance is undefined
 
-    if (messages.message !== '') {
-      printColoredMessage(terminalInstanceRef.current, messages.message, messages.color)
-
-      dispatch(setClearTerminalMessage())
+    if (messages.messages.length > 0) {
+      for (let i = 0; i < messages.messages.length; i++) {
+        if (!messages.messages[i].messageShown) {
+          printColoredMessage(
+            terminalInstanceRef.current,
+            messages.messages[i].message,
+            messages.messages[i].color
+          )
+          // Mark the message as shown
+          dispatch(setShownMessages(i))
+        }
+      }
     }
   }, [messages, terminalInstanceRef, dispatch])
 

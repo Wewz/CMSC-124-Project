@@ -7,6 +7,7 @@ import semanticsReducer from './slices/semanticSlice'
 import termialMessageReducer from './slices/terminalMessageSlice'
 import userInputReducer from './slices/userInputSlice'
 import terminalInputReducer from './slices/terminalInputSlice'
+import codeRunningReducer from './slices/codeRunningSlice'
 
 // Add all reducers of different slices of states here
 const rootReducer = combineReducers({
@@ -17,7 +18,8 @@ const rootReducer = combineReducers({
   semantics: semanticsReducer,
   terminalMessage: termialMessageReducer,
   userInput: userInputReducer,
-  terminalInput: terminalInputReducer
+  terminalInput: terminalInputReducer,
+  code: codeRunningReducer
 })
 
 export default rootReducer

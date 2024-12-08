@@ -8,6 +8,7 @@ import { requestUserInput, clearUserInput } from '@renderer/store/slices/userInp
 import store, { AppDispatch } from '@renderer/store/store'
 import { separateVisibleStatement } from './analyzerHelper'
 import { functionList, functionState } from '@renderer/interfaces/interfaces'
+import { addTerminalMessage } from '@renderer/store/slices/terminalMessageSlice'
 
 const handleVariableDeclaration = (
   trimmedLine: string,
@@ -91,10 +92,11 @@ const handleVariableAssignment = (
   }
 }
 
-const handleOutputStatements = (
+const handleOutputStatements = async (
   trimmedLine: string,
   lineNumber: number,
   localSymbolTable: Record<string, SymbolTableEntry>,
+  dispatch: AppDispatch,
   errors: { error: string; line: number }[]
 ) => {
   const match = trimmedLine.match(/^VISIBLE (.+)$/)
@@ -122,12 +124,22 @@ const handleOutputStatements = (
           error: `Invalid output expression: "${part}"`,
           line: lineNumber + 1
         })
-        return
       }
     }
+    dispatch(addTerminalMessage({ message: outputResult, color: 'green', messageShown: false }))
+
+    // Dispatch the result to the terminal and wait for user acknowledgment
+    await new Promise<void>((resolve) => {
+      const unsubscribe = store.subscribe(() => {
+        const state = store.getState()
+        if (state.terminalMessage.messages) {
+          resolve()
+          unsubscribe()
+        }
+      })
+    })
 
     console.log('Output the evaluated result', outputResult + '\n')
-    return outputResult
   }
 }
 

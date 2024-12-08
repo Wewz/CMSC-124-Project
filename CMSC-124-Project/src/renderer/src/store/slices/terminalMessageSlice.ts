@@ -1,18 +1,18 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-interface terminalMessageProps {
+interface messageProps {
   message: string
   color: string
-  showMessage: boolean
   messageShown: boolean
+}
+
+interface terminalMessagesProps {
+  messages: messageProps[]
   clear: boolean
 }
 
-const initialState: terminalMessageProps = {
-  message: '',
-  color: '',
-  showMessage: false,
-  messageShown: false,
+const initialState: terminalMessagesProps = {
+  messages: [],
   clear: false
 }
 
@@ -23,20 +23,19 @@ const terminalMessageSlice = createSlice({
     setClearTerminal(state, action: PayloadAction<boolean>) {
       state.clear = action.payload
     },
-    setTerminalMessage(state, action: PayloadAction<{ message: string; color: string }>) {
-      state.message = action.payload.message
-      state.color = action.payload.color
-      state.showMessage = true
+    addTerminalMessage(state, action: PayloadAction<messageProps>) {
+      state.messages = [...state.messages, action.payload]
     },
     setClearTerminalMessage(state) {
-      state.message = ''
-      state.showMessage = false
-      state.messageShown = true
+      state.messages = []
+    },
+    setShownMessages(state, action: PayloadAction<number>) {
+      state.messages[action.payload].messageShown = true
     }
   }
 })
 
-export type { terminalMessageProps }
-export const { setClearTerminal, setTerminalMessage, setClearTerminalMessage } =
+export type { terminalMessagesProps, messageProps }
+export const { setClearTerminal, addTerminalMessage, setClearTerminalMessage, setShownMessages } =
   terminalMessageSlice.actions
 export default terminalMessageSlice.reducer

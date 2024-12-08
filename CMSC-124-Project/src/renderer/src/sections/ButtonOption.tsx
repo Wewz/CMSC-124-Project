@@ -6,8 +6,14 @@ import { Button, buttonVariants } from '../components/index'
 import { Play } from 'lucide-react'
 import { useDispatch, useSelector } from 'react-redux'
 import { RootState, AppDispatch } from '@renderer/store/store'
-import { setTerminalMessage, setClearTerminal } from '@renderer/store/slices/terminalMessageSlice'
 import { setShowErrors, setClearErrors } from '@renderer/store/slices/errorSlice'
+import { stopRun } from '@renderer/store/slices/codeRunningSlice'
+import { setRun } from '@renderer/store/slices/codeRunningSlice'
+import {
+  setClearTerminal,
+  addTerminalMessage,
+  setClearTerminalMessage
+} from '@renderer/store/slices/terminalMessageSlice'
 
 const ButtonOption: React.FC = () => {
   const dispatch: AppDispatch = useDispatch()
@@ -41,14 +47,27 @@ const ButtonOption: React.FC = () => {
           <Button
             className="font-bold"
             variant={'outline'}
-            onClick={() => {
-              dispatch(setClearErrors())
+            onClick={async () => {
+              dispatch(
+                addTerminalMessage({
+                  message: 'Running LOLCODE',
+                  color: 'green',
+                  messageShown: false
+                })
+              )
+              dispatch(setClearTerminalMessage())
               dispatch(setClearTerminal(true))
-              dispatch(setTerminalMessage({ message: 'Running LOLCODE', color: 'green' }))
-
-              lexemeAnalyzer(content, dispatch)
-              syntaxAnalyzer(content, dispatch)
-
+              dispatch(setRun())
+              dispatch(
+                addTerminalMessage({
+                  message: 'Running LOLCODE',
+                  color: 'green',
+                  messageShown: false
+                })
+              )
+              await lexemeAnalyzer(content, dispatch)
+              await syntaxAnalyzer(content, dispatch)
+              dispatch(stopRun())
               dispatch(setShowErrors(true))
             }}
           >

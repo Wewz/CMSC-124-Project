@@ -16,7 +16,6 @@ import {
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
 import { validExpressionRegex } from './constants'
-import { setTerminalMessage } from '@renderer/store/slices/terminalMessageSlice'
 import { functionList, functionState } from '@renderer/interfaces/interfaces'
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
@@ -237,15 +236,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
 
     // Handle output statements
     if (/^VISIBLE /.test(trimmedLine)) {
-      const outputMessage = handleOutputStatements(
-        trimmedLine,
-        lineNumber,
-        localSymbolTable,
-        errors
-      )
-      if (outputMessage) {
-        dispatch(setTerminalMessage({ message: outputMessage ?? 'invalid', color: 'green' }))
-      }
+      handleOutputStatements(trimmedLine, lineNumber, localSymbolTable, dispatch, errors)
       continue
     }
 
