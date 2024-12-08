@@ -215,6 +215,117 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       }
     }
 
+    // Handle switch statements
+    if (/^WTF\?$/.test(trimmedLine)) {
+      let insideWTF = true
+      let caseMatched = false
+
+      // Ensure the previous line contains a valid switch expression
+      const switchExpression = lines[lineNumber - 1]?.trim()
+      if (!switchExpression) {
+        errors.push({
+          error: "Missing switch expression before 'WTF?'",
+          line: lineNumber
+        })
+        insideWTF = false
+        continue
+      }
+
+      // Evaluate the switch expression
+      const evaluatedSwitch = evaluateExpression(
+        switchExpression,
+        localSymbolTable,
+        lineNumber - 1,
+        errors
+      )
+      if (!evaluatedSwitch || evaluatedSwitch.error) {
+        errors.push({
+          error: `Invalid switch expression: "${switchExpression}"`,
+          line: lineNumber - 1
+        })
+        insideWTF = false
+        continue
+      }
+      const switchValue = evaluatedSwitch.value
+
+      // Parse the WTF? block
+      while (insideWTF && lineNumber < lines.length - 1) {
+        lineNumber++
+        const nextLine = lines[lineNumber].trim()
+
+        // Match case (OMG <value>)
+        if (/^OMG /.test(nextLine)) {
+          const caseValue = nextLine.replace(/^OMG /, '').trim()
+
+          if (caseMatched) {
+            // Skip the current case if another was matched
+            while (lineNumber < lines.length - 1) {
+              lineNumber++
+              const innerLine = lines[lineNumber].trim()
+              if (
+                /^OMG /.test(innerLine) ||
+                /^OMGWTF$/.test(innerLine) ||
+                /^OIC$/.test(innerLine)
+              ) {
+                lineNumber--
+                break
+              }
+            }
+          } else if (switchValue?.toString() === caseValue) {
+            // Match and process this case
+            caseMatched = true
+            while (lineNumber < lines.length - 1) {
+              lineNumber++
+              const innerLine = lines[lineNumber].trim()
+
+              if (/^GTFO$/.test(innerLine)) break // Exit the current case
+              if (
+                /^OMG /.test(innerLine) ||
+                /^OMGWTF$/.test(innerLine) ||
+                /^OIC$/.test(innerLine)
+              ) {
+                lineNumber--
+                break
+              }
+
+              // Process statements inside the case
+              await syntaxAnalyzer(innerLine, dispatch)
+            }
+          }
+          continue
+        }
+
+        // Match default case (OMGWTF)
+        if (/^OMGWTF$/.test(nextLine)) {
+          if (!caseMatched) {
+            while (lineNumber < lines.length - 1) {
+              lineNumber++
+              const innerLine = lines[lineNumber].trim()
+
+              if (/^OIC$/.test(innerLine)) break // End the default case
+
+              // Process statements in default case
+              await syntaxAnalyzer(innerLine, dispatch)
+            }
+          }
+          continue
+        }
+
+        // End WTF? block
+        if (/^OIC$/.test(nextLine)) {
+          insideWTF = false
+        }
+      }
+
+      if (insideWTF) {
+        errors.push({
+          error: "Unterminated switch block (missing 'OIC')",
+          line: lines.length
+        })
+      }
+      continue
+    }
+
     // Handle loops
     insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
 
