@@ -37,6 +37,9 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let satisfyCondition = false
   let swtichBlock = false
   let swtichGTFO = false
+  let loopConditionMet = false
+  let loopLabel = ''
+  let loopStart = -1
 
   const functionList: functionList = {
     functions: []
@@ -224,8 +227,34 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       localSymbolTable['IT'].type = localSymbolTable[trimmedLine].type
     }
 
-    // Handle loops
-    insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
+    // Handle loop statements
+    const loopStatus = handleLoops(
+      trimmedLine,
+      lineNumber,
+      insideLoop,
+      loopConditionMet,
+      loopLabel,
+      loopStart,
+      localSymbolTable,
+      errors
+    )
+
+    // Update loop state after handling
+    insideLoop = loopStatus.insideLoop
+    loopConditionMet = loopStatus.loopConditionMet
+    loopLabel = loopStatus.loopLabel
+    loopStart = loopStatus.loopStart
+
+    if (loopStatus.handled) {
+      lineNumber = loopStatus.newLineNumber // Continue from loop start
+      continue
+    }
+
+    // Skip lines in loop if condition is not met
+    if (insideLoop && !loopConditionMet) {
+      console.log(`Ignoring line ${lineNumber + 1} due to inactive loop condition`)
+      continue
+    }
 
     // Handle function declarations
     insideFunction = handleFunctionDeclarations(
@@ -267,6 +296,9 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       error: "Unterminated function block (missing 'IF U SAY SO')",
       line: lines.length
     })
+  }
+  if (insideLoop) {
+    errors.push({ error: "Unterminated loop block (missing 'IM OUTTA YR')", line: lines.length })
   }
 
   console.log('Syntax Errors', errors)
