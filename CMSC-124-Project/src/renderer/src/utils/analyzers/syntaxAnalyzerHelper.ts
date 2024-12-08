@@ -99,6 +99,7 @@ const handleOutputStatements = async (
   dispatch: AppDispatch,
   errors: { error: string; line: number }[]
 ) => {
+  console.log('here !!!!!!!!!!!!')
   const match = trimmedLine.match(/^VISIBLE (.+)$/)
   if (match) {
     const parts = separateVisibleStatement(match[1].trim())
@@ -387,24 +388,133 @@ const handleLoops = (
   trimmedLine: string,
   lineNumber: number,
   insideLoop: boolean,
-  errors: { error: string; line: number }[]
+  loopConditionMet: boolean,
+  loopLabel: string,
+  loopStart: number,
+  localSymbolTable: Record<string, SymbolTableEntry>,
+  errors: { error: string; line: number }[],
+  loopDeclaration?: string // Added to store loop declaration
 ) => {
-  if (/^IM IN YR /.test(trimmedLine)) {
-    insideLoop = true
-    return insideLoop
-  }
-  if (/^IM OUTTA YR /.test(trimmedLine)) {
-    if (!insideLoop) {
+  let handled = false
+  let newLineNumber = lineNumber
+
+  if (/^IM IN YR/.test(trimmedLine)) {
+    // Nested loop check
+    if (insideLoop) {
       errors.push({
-        error: `'IM OUTTA YR' found outside of a loop`,
+        error: `Nested loops are not supported`,
+        line: lineNumber + 1
+      })
+      return {
+        handled: true,
+        newLineNumber,
+        insideLoop,
+        loopConditionMet,
+        loopLabel,
+        loopStart
+      }
+    }
+
+    // Parsing the loop declaration
+    const match = /^IM IN YR (\w+)(?: (UPPIN|NERFIN) YR (\w+))? (WILE|TIL) (.+)$/.exec(trimmedLine)
+    if (match) {
+      loopLabel = match[1]
+      loopStart = lineNumber
+      insideLoop = true
+      loopDeclaration = trimmedLine // Store loop declaration
+
+      const condition = match[5]
+      const incrementType = match[2]
+      const loopVariable = match[3]
+
+      // Initially evaluate the loop condition
+      const conditionResult = evaluateExpression(condition, localSymbolTable, lineNumber, errors)
+      if (conditionResult.type === 'ERROR') {
+        errors.push({
+          error: `Invalid loop condition`,
+          line: lineNumber + 1
+        })
+        loopConditionMet = false
+      } else {
+        loopConditionMet = conditionResult.value
+      }
+
+      handled = true
+    }
+  }
+
+  if (/^IM OUTTA YR/.test(trimmedLine)) {
+    const outtaLabel = trimmedLine.split(' ')[3]
+
+    // Check for mismatched or extraneous 'IM OUTTA YR'
+    if (!insideLoop || loopLabel !== outtaLabel) {
+      errors.push({
+        error: `Mismatched or extraneous 'IM OUTTA YR'`,
         line: lineNumber + 1
       })
     } else {
-      insideLoop = false
+      insideLoop = false // Exit loop
     }
-    return insideLoop
+
+    handled = true
   }
-  return insideLoop
+
+  // If inside loop, evaluate loop condition and execute loop body
+  if (insideLoop) {
+    if (loopConditionMet) {
+      if (loopDeclaration) {
+        const match = /^IM IN YR (\w+)(?: (UPPIN|NERFIN) YR (\w+))? (WILE|TIL) (.+)$/.exec(
+          loopDeclaration
+        )
+        if (match) {
+          const incrementType = match[2]
+          const loopVariable = match[3]
+          const condition = match[5]
+
+          // Update loop variable (UPPIN/NERFIN)
+          if (incrementType && loopVariable && localSymbolTable[loopVariable]) {
+            if (incrementType === 'UPPIN') {
+              localSymbolTable[loopVariable].value++
+            } else if (incrementType === 'NERFIN') {
+              localSymbolTable[loopVariable].value--
+            }
+          }
+
+          // Re-evaluate the loop condition
+          const conditionResult = evaluateExpression(
+            condition,
+            localSymbolTable,
+            lineNumber,
+            errors
+          )
+          if (conditionResult.type !== 'ERROR') {
+            loopConditionMet = conditionResult.value
+          } else {
+            loopConditionMet = false
+            errors.push({
+              error: `Invalid loop condition during execution`,
+              line: lineNumber + 1
+            })
+          }
+        }
+      }
+
+      // If condition is met, continue looping
+      newLineNumber = loopStart // Jump back to the start of the loop
+    } else {
+      insideLoop = false // Exit loop if condition is not met
+    }
+  }
+
+  return {
+    handled,
+    newLineNumber,
+    insideLoop,
+    loopConditionMet,
+    loopLabel,
+    loopStart,
+    loopDeclaration // Return updated loopDeclaration
+  }
 }
 
 const handleFunctionDeclarations = (
