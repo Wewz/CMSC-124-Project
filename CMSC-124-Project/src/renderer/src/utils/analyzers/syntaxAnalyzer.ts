@@ -13,11 +13,13 @@ import {
   handleFunctionCalls,
   handleTypeCasting
 } from './syntaxAnalyzerHelper'
+import { evaluateExpression } from './expressionEvaluationHelper'
+
+let localSymbolTable: Record<string, SymbolTableEntry> = {}
+const errors: { error: string; line: number }[] = []
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
-  const errors: { error: string; line: number }[] = []
   const lines = content.split('\n')
-  const localSymbolTable: Record<string, SymbolTableEntry> = {}
 
   let insideConditional = false
   let insideLoop = false
@@ -92,18 +94,127 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
 
     // Handle input statements
     if (/^GIMMEH /.test(trimmedLine)) {
-      await handleInputStatements(trimmedLine, lineNumber, localSymbolTable, errors, dispatch)
+      const updated = await handleInputStatements(
+        trimmedLine,
+        lineNumber,
+        localSymbolTable,
+        errors,
+        dispatch
+      )
+      if (updated) {
+        localSymbolTable = updated
+      }
       console.log('Updated Variables: ', localSymbolTable)
       continue
     }
 
     // Handle conditional statements
-    insideConditional = handleConditionalStatements(
-      trimmedLine,
-      lineNumber,
-      insideConditional,
-      errors
-    )
+    if (/^(BOTH SAEM|DIFFRINT)/.test(trimmedLine)) {
+      const result = evaluateExpression(trimmedLine, localSymbolTable, lineNumber, errors)
+      let conditionMet = result.value === true // Boolean for branching
+      let conditionProcessed = false // Track if any condition was executed
+
+      // Check for O RLY? block
+      if (/^O RLY\?$/.test(lines[lineNumber + 1]?.trim())) {
+        lineNumber++ // Move to O RLY?
+        let insideORLY = true
+
+        while (insideORLY && lineNumber < lines.length - 1) {
+          lineNumber++
+          const nextLine = lines[lineNumber].trim()
+
+          // Enter YA RLY block
+          if (/^YA RLY$/.test(nextLine)) {
+            if (!conditionProcessed && conditionMet) {
+              conditionProcessed = true
+              while (lineNumber < lines.length - 1) {
+                lineNumber++
+                const innerLine = lines[lineNumber].trim()
+
+                if (/^NO WAI$/.test(innerLine) || /^OIC$/.test(innerLine)) break
+
+                // Process YA RLY block
+                await syntaxAnalyzer(innerLine, dispatch) // Process nested lines
+              }
+            } else {
+              // Skip YA RLY block
+              while (lineNumber < lines.length - 1) {
+                lineNumber++
+                if (
+                  /^NO WAI$/.test(lines[lineNumber].trim()) ||
+                  /^OIC$/.test(lines[lineNumber].trim())
+                )
+                  break
+              }
+            }
+            continue
+          }
+
+          // Enter MEBBE block
+          if (/^MEBBE$/.test(nextLine)) {
+            if (!conditionProcessed) {
+              const mebbeResult = evaluateExpression(nextLine, localSymbolTable, lineNumber, errors)
+              if (mebbeResult.value === true) {
+                conditionProcessed = true
+                while (lineNumber < lines.length - 1) {
+                  lineNumber++
+                  const innerLine = lines[lineNumber].trim()
+
+                  if (/^NO WAI$/.test(innerLine) || /^OIC$/.test(innerLine)) break
+
+                  // Process MEBBE block
+                  await syntaxAnalyzer(innerLine, dispatch) // Process nested lines
+                }
+              } else {
+                // Skip MEBBE block
+                while (lineNumber < lines.length - 1) {
+                  lineNumber++
+                  if (
+                    /^NO WAI$/.test(lines[lineNumber].trim()) ||
+                    /^OIC$/.test(lines[lineNumber].trim())
+                  )
+                    break
+                }
+              }
+            }
+            continue
+          }
+
+          // Enter NO WAI block
+          if (/^NO WAI$/.test(nextLine)) {
+            if (!conditionProcessed) {
+              conditionProcessed = true
+              while (lineNumber < lines.length - 1) {
+                lineNumber++
+                const innerLine = lines[lineNumber].trim()
+
+                if (/^OIC$/.test(innerLine)) break
+
+                // Process NO WAI block
+                await syntaxAnalyzer(innerLine, dispatch) // Process nested lines
+              }
+            } else {
+              // Skip NO WAI block
+              while (lineNumber < lines.length - 1) {
+                lineNumber++
+                if (/^OIC$/.test(lines[lineNumber].trim())) break
+              }
+            }
+            continue
+          }
+
+          // End O RLY block
+          if (/^OIC$/.test(nextLine)) {
+            insideORLY = false
+          }
+        }
+      } else {
+        errors.push({
+          error: `Conditional missing 'O RLY?' after: "${trimmedLine}"`,
+          line: lineNumber + 1
+        })
+      }
+    }
 
     // Handle loops
     insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
