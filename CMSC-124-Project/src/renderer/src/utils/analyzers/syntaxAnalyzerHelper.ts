@@ -279,36 +279,40 @@ const handleSwitch = (
     return { insideSwitch, satisfyCondition, switchBlock, swtichGTFO }
   }
 
-  if (/^OMG /.test(trimmedLine)) {
+  console.log(
+    'Switch Blocked',
+    trimmedLine,
+    /^OMG /.test(trimmedLine.trim()),
+    !satisfyCondition && !swtichGTFO
+  )
+
+  if (/^OMG /.test(trimmedLine.trim())) {
     if (!insideSwitch) {
       errors.push({
         error: `'OMG' found outside of a switch block`,
         line: lineNumber + 1
       })
     } else if (!satisfyCondition && !swtichGTFO) {
-      const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|OMG (".*?")|OMG (WIN|FAIL)$/)
+      const match = trimmedLine.match(/^OMG (-?\d+(\.\d+)?)|OMG ".*?"|OMG (WIN|FAIL)$/)
+
+      console.log('Switch Matched Expression', match)
+
       if (match) {
-        let value
+        let value: any
         if (match[1]) {
-          value = Number(match[1])
+          value = Number(match[1]) // Number case
+        } else if (match[0]?.includes('"')) {
+          value = match[0].slice(4).replace(/"/g, '') // String case
         } else if (match[3]) {
-          value = match[3].replace(/["\\]/g, '')
-        } else if (match[4]) {
-          value = match[4] === 'WIN'
-        } else {
-          value = localSymbolTable['IT']?.value
+          value = match[3] === 'WIN' // Boolean case
         }
 
-        console.log(
-          'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHHHHH',
-          value,
-          localSymbolTable['IT']?.value,
-          localSymbolTable['IT']?.value == value
-        )
+        console.log('Switch Status', value, localSymbolTable['IT']?.value === value)
 
+        // Compare IT value
         if (localSymbolTable['IT']?.value == value) {
           satisfyCondition = true
-          switchBlock = true
+          switchBlock = true // Activate current block
         }
       }
     }
@@ -334,7 +338,7 @@ const handleSwitch = (
         error: `'GTFO' found outside of a switch block`,
         line: lineNumber + 1
       })
-    } else {
+    } else if (satisfyCondition) {
       satisfyCondition = false // Exit the current case
       swtichGTFO = true
     }
