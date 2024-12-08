@@ -16,6 +16,7 @@ import {
 import { printColoredMessage } from '../ui-helpers/terminalFunctions'
 import { Terminal } from 'xterm'
 import { setTerminalMessage } from '@renderer/store/slices/terminalMessageSlice'
+import { functionList, functionState } from '@renderer/interfaces/interfaces'
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   const errors: { error: string; line: number }[] = []
@@ -28,6 +29,16 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let insideWazzup = false
   let foundHai = false
   let foundWazzup = false
+
+  const functionList: functionList = {
+    functions: []
+  };
+  
+  const functionState: functionState = {
+    func_name: "",
+    parameters: [],
+    bodyLine: ""
+  };
 
   for (let lineNumber = 0; lineNumber < lines.length; lineNumber++) {
     const terminal = new Terminal()
@@ -82,6 +93,12 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
+    //concatenante string
+    // if(insideFunction == true){
+    //   functionState.bodyLine.push(trimmedLine)
+    //   continue
+    // }
+
     // Handle variable assignments
     if (/^[A-Za-z][A-Za-z0-9_]* R /.test(trimmedLine)) {
       handleVariableAssignment(trimmedLine, lineNumber, localSymbolTable, errors)
@@ -91,7 +108,10 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     // Handle output statements
     if (/^VISIBLE /.test(trimmedLine)) {
       const outputMessage = handleOutputStatements(trimmedLine, lineNumber, localSymbolTable, errors)
-      dispatch(setTerminalMessage({ message: outputMessage ?? "invalid", color: 'green' }))
+      if (outputMessage) {
+        dispatch(setTerminalMessage({ message: outputMessage ?? "invalid", color: 'green' }))
+
+      }
       continue
     }
 
@@ -114,8 +134,8 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     insideLoop = handleLoops(trimmedLine, lineNumber, insideLoop, errors)
 
     // Handle function declarations
-    insideFunction = handleFunctionDeclarations(trimmedLine, lineNumber, insideFunction, errors)
-
+    insideFunction = handleFunctionDeclarations(trimmedLine, lineNumber, insideFunction, errors, functionList, functionState)
+    console.log(functionList)
     // Handle function calls
     if (/^I IZ /.test(trimmedLine)) {
       handleFunctionCalls(trimmedLine, lineNumber, errors)
