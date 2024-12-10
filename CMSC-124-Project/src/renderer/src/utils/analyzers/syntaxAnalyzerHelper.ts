@@ -37,6 +37,13 @@ const handleVariableDeclaration = (
       })
     } else {
       if (value) {
+        // Handle type casting
+        if (/^MAEK /.test(value) || /([^\s]+)\s+IS NOW A /.test(value)) {
+          console.log('Current Expression In MAEK', value)
+          handleTypeCasting(value, lineNumber, variable, localSymbolTable, errors)
+          return
+        }
+
         const evalResult = evaluateExpression(value, localSymbolTable, lineNumber + 1, errors)
         localSymbolTable[variable] = {
           type: evalResult.type,
@@ -72,22 +79,33 @@ const handleVariableAssignment = (
         line: lineNumber + 1
       })
     } else {
-      const evalResult = evaluateExpression(value, localSymbolTable, lineNumber + 1, errors)
-      const currentType = localSymbolTable[variable].type
+      // Handle type casting
+      if (/^MAEK /.test(value) || /([^\s]+)\s+IS NOW A /.test(value)) {
+        console.log('Current Expression In MAEK', value)
+        handleTypeCasting(value, lineNumber, variable, localSymbolTable, errors)
+        return
+      }
 
-      if (
-        currentType !== 'UNDEFINED' &&
-        currentType !== 'NOOB' &&
-        evalResult.type !== currentType
-      ) {
-        errors.push({
-          error: `Type mismatch in assignment to "${variable}". Expected: ${currentType}, Got: ${evalResult.type}`,
-          line: lineNumber + 1
-        })
-      } else {
+      const evalResult = evaluateExpression(value, localSymbolTable, lineNumber + 1, errors)
+
+      if (evalResult.type !== 'ERROR') {
         localSymbolTable[variable].value = evalResult.value
         localSymbolTable[variable].type = evalResult.type
       }
+
+      // if (
+      //   currentType !== 'UNDEFINED' &&
+      //   currentType !== 'NOOB' &&
+      //   evalResult.type !== currentType
+      // ) {
+      //   errors.push({
+      //     error: `Type mismatch in assignment to "${variable}". Expected: ${currentType}, Got: ${evalResult.type}`,
+      //     line: lineNumber + 1
+      //   })
+      // } else {
+      //   localSymbolTable[variable].value = evalResult.value
+      //   localSymbolTable[variable].type = evalResult.type
+      // }
     }
   }
 }
@@ -662,86 +680,146 @@ const handleFunctionCalls = (
   return { functionRunning, func }
 }
 
+function isLiteral(value: string): boolean {
+  return /^".*"$|^[0-9]+(\.[0-9]+)?$|^(WIN|FAIL)$/.test(value) // Matches strings, numbers, and TROOF literals
+}
+
 const handleTypeCasting = (
   trimmedLine: string,
   lineNumber: number,
+  varToUpdate: string,
   localSymbolTable: Record<string, SymbolTableEntry>,
   errors: { error: string; line: number }[]
 ) => {
-  const match = trimmedLine.match(/^MAEK (.+) A (NOOB|NUMBR|NUMBAR|YARN|TROOF)$/)
+  let match = trimmedLine.match(/^MAEK ([^\s]+) A (NOOB|NUMBR|NUMBAR|YARN|TROOF)$/)
+
+  if (!match) {
+    match = trimmedLine.match(/^([^\s]+) IS NOW A ([^\s]+)$/)
+  }
+
+  console.log('MAEK Matched Expression', match)
+
   if (match) {
     const value = match[1]
     const targetType = match[2]
+    // Check if the value is a literal or a valid identifier in the symbol table
     if (!isLiteralOrIdentifier(value, new Set(Object.keys(localSymbolTable)))) {
       errors.push({
         error: `Invalid value for type casting: "${value}"`,
         line: lineNumber + 1
       })
-    } else {
-      // Handle type casting logic here if needed
+      return
+    }
+
+    console.log('MAEK Processing Expression', value, targetType)
+
+    // Retrieve the value from the symbol table or treat it as a literal
+    const resolvedValue = evaluateExpression(value, localSymbolTable, lineNumber, errors)
+
+    console.log('MAEK Processing Expression', resolvedValue.value, resolvedValue.type)
+
+    if (resolvedValue.type === 'ERROR') return
+
+    // Perform typecasting based on the target type
+    let castedValue
+    switch (targetType) {
+      case 'NOOB':
+        castedValue = 'NOOB' // NOOB represents an uninitialized state
+        break
+      case 'NUMBR':
+        if (resolvedValue.type === 'NOOB') {
+          // NOOB to NUMBR: Default to zero
+          castedValue = 0
+        } else if (resolvedValue.type === 'TROOF') {
+          // TROOF to NUMBR: WIN = 1, FAIL = 0
+          castedValue = resolvedValue.value === true || resolvedValue.value === 'WIN' ? 1 : 0
+        } else if (resolvedValue.type === 'NUMBAR') {
+          // NUMBAR to NUMBR: Truncate decimal
+          castedValue = Math.floor(resolvedValue.value)
+        } else if (resolvedValue.type === 'YARN') {
+          // YARN to NUMBR: Parse as integer, invalid becomes zero
+          castedValue = parseInt(resolvedValue.value, 10)
+          if (isNaN(castedValue)) {
+            castedValue = 0 // Default invalid to 0
+          }
+        } else {
+          // Default case: Attempt to parse, fallback to 0
+          castedValue = parseInt(resolvedValue.value, 10) || 0
+        }
+        break
+      case 'NUMBAR':
+        if (resolvedValue.type === 'NOOB') {
+          // NOOB to NUMBAR: Default to zero
+          castedValue = 0.0
+        } else if (resolvedValue.type === 'TROOF') {
+          // TROOF to NUMBAR: WIN = 1.0, FAIL = 0.0
+          castedValue = resolvedValue.value === true || resolvedValue.value === 'WIN' ? 1.0 : 0.0
+        } else if (resolvedValue.type === 'NUMBR') {
+          // NUMBR to NUMBAR: Convert to floating point
+          castedValue = parseFloat(resolvedValue.value)
+        } else if (resolvedValue.type === 'YARN') {
+          // YARN to NUMBAR: Parse as float, invalid becomes zero
+          castedValue = parseFloat(resolvedValue.value)
+          if (isNaN(castedValue)) {
+            castedValue = 0.0 // Default invalid to 0.0
+          }
+        } else {
+          // Default case: Attempt to parse, fallback to 0.0
+          castedValue = parseFloat(resolvedValue.value) || 0.0
+        }
+        break
+      case 'YARN':
+        if (resolvedValue.type === 'NOOB') {
+          // NOOB to YARN: Empty string
+          castedValue = ''
+        } else if (resolvedValue.type === 'TROOF') {
+          // TROOF to YARN: WIN -> "WIN", FAIL -> "FAIL"
+          castedValue =
+            resolvedValue.value === true || resolvedValue.value === 'WIN' ? 'WIN' : 'FAIL'
+        } else if (resolvedValue.type === 'NUMBR' || resolvedValue.type === 'NUMBAR') {
+          // NUMBR/NUMBAR to YARN: Convert to string
+          castedValue = resolvedValue.value.toString()
+        } else {
+          // Default case: Maintain as string
+          castedValue = resolvedValue.value
+        }
+        break
+      case 'TROOF':
+        if (resolvedValue.type === 'NOOB') {
+          // NOOB to TROOF: Always FAIL
+          castedValue = false
+        } else if (
+          resolvedValue.type === 'YARN' ||
+          resolvedValue.type === 'NUMBR' ||
+          resolvedValue.type === 'NUMBAR'
+        ) {
+          // TROOF casting rules: Empty string, 0, or 0.0 = FAIL; others = WIN
+          const numericValue = parseFloat(resolvedValue.value)
+          castedValue = resolvedValue.value === '' || numericValue === 0 ? false : true
+        } else {
+          // Default case: Maintain as TROOF
+          castedValue = resolvedValue.value === 'WIN' || resolvedValue.value === true
+        }
+        break
+      default:
+        errors.push({
+          error: `Invalid target type for type casting: "${targetType}"`,
+          line: lineNumber + 1
+        })
+        return
+    }
+
+    // Update the symbol table with the casted value
+    localSymbolTable[varToUpdate] = {
+      value: castedValue,
+      type: targetType,
+      existingProperty: null
     }
   } else {
     errors.push({
       error: `Invalid type casting syntax: "${trimmedLine}"`,
       line: lineNumber + 1
     })
-  }
-}
-
-const handleSMOOSH = (
-  trimmedLine: string,
-  lineNumber: number,
-  localSymbolTable: Record<string, SymbolTableEntry>,
-  errors: { error: string; line: number }[]
-) => {
-  const smooshMatch = trimmedLine.match(/^SMOOSH (.+)$/)
-  if (smooshMatch) {
-    const expression = smooshMatch[1].trim()
-
-    // Split the expression by " AN " which is the delimiter between parts
-    const parts = expression.split(/\s+AN\s+/).map((part) => part.trim())
-
-    let concatenatedResult = ''
-
-    // Iterate over each part of the expression
-    for (const part of parts) {
-      if (/^".*"$/.test(part)) {
-        // It's a string literal, remove the quotes and concatenate
-        concatenatedResult += part.slice(1, -1)
-      } else {
-        // Check if it's a variable
-        const symbol = localSymbolTable[part]
-        if (symbol) {
-          concatenatedResult += symbol.value.toString()
-        } else {
-          // If it's an undefined variable, evaluate the expression
-          try {
-            const evalResult = evaluateExpression(part, localSymbolTable, lineNumber + 1, errors)
-            concatenatedResult += evalResult.value.toString()
-          } catch (error) {
-            errors.push({
-              error: `Invalid expression: "${part}"`,
-              line: lineNumber
-            })
-            return // Stop execution if there's an error
-          }
-        }
-      }
-    }
-
-    // Now handle the assignment case like `x R SMOOSH ...`
-    const assignmentMatch = trimmedLine.match(/^([A-Za-z][A-Za-z0-9_]*) R SMOOSH/)
-    if (assignmentMatch) {
-      const varName = assignmentMatch[1]
-      localSymbolTable[varName] = {
-        existingProperty: null, // Default ReactNode or null
-        type: 'string', // The result will be a string
-        value: concatenatedResult
-      }
-    }
-
-    // Return the final concatenated result
-    return concatenatedResult
   }
 }
 
@@ -755,6 +833,5 @@ export {
   handleFunctionDeclarations,
   handleFunctionCalls,
   handleTypeCasting,
-  handleSwitch,
-  handleSMOOSH
+  handleSwitch
 }

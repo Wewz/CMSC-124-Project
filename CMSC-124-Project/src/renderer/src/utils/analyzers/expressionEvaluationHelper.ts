@@ -44,19 +44,29 @@ const typecastValue = (value: any, type: string, context: string) => {
   if (context === 'comparison') return { type, value }
 
   if (type === 'NOOB') {
-    return context === 'arithmetic' ? { type: 'NUMBR', value: 0 } : { type: 'TROOF', value: false } // NOOB becomes FAIL/false for boolean/comparison
+    if (context === 'arithmetic') {
+      return { type: 'NUMBR', value: 0 }
+    } else if (context === 'string') {
+      return { type: 'YARN', value: value }
+    }
+    return { type: 'TROOF', value: false } // NOOB becomes FAIL/false for boolean/comparison
   }
 
   console.log('Values to be typecast', value, type, context)
 
   if (type === 'TROOF') {
     console.log('Return Value', value === true || value === 'WIN' ? 1 : 0, context === 'arithmetic')
-    return context === 'arithmetic'
-      ? { type: 'NUMBR', value: value === true || value === 'WIN' ? 1 : 0 }
-      : { type: 'TROOF', value: value === true || value === 'WIN' }
+    if (context === 'arithmetic') {
+      return { type: 'NUMBR', value: value === true || value === 'WIN' ? 1 : 0 }
+    } else if (context === 'string') {
+      return { type: 'YARN', value: value === true || value === 'WIN' ? 'WIN' : 'FAIL' }
+    }
+    return { type: 'TROOF', value: value === true || value === 'WIN' }
   }
 
   if (type === 'YARN') {
+    if (context === 'string') return { type, value }
+
     const parsed = parseYarnToNumber(value)
     if (parsed) {
       return typecastValue(parsed.value, parsed.type, context)
@@ -72,6 +82,8 @@ const typecastValue = (value: any, type: string, context: string) => {
     if (context === 'boolean') {
       const isFalsy = value === 0 || value === '0'
       return { type: 'TROOF', value: !isFalsy } // Non-zero is WIN/true
+    } else if (context === 'string') {
+      return { type: 'YARN', value: value.toString() }
     }
     return { type, value }
   }
@@ -147,6 +159,17 @@ const evaluateExpression = (
     { pattern: /DIFFRINT ([^\s]+)\s+AN\s+([^\s]+)/, operation: (a, b) => a !== b }
   ]
 
+  const stringPatterns = [
+    {
+      pattern: /SMOOSH ([^\s]+)\s+AN\s+([^\s]+)(?:\s+(.+))?/,
+      operation: (a, b) => {
+        const first = a.replace(/ /g, '<#>')
+        const second = b.replace(/ /g, '<#>')
+        return '"'.concat(first, second, '"')
+      }
+    }
+  ]
+
   const arithmeticKeywords = [/SUM/, /DIFF/, /PRODUKT/, /QUOSHUNT/, /MOD/, /BIGGR/, /SMALLR/]
   const logicalKeywords = [/BOTH/, /EITHER/, /WON/, /NOT/, /ALL/, /ANY/, /DIFFRINT/]
   const comparisonKeywords = [/BOTH/, /DIFFRINT/]
@@ -159,9 +182,9 @@ const evaluateExpression = (
   ) => {
     do {
       matched = false
-
       for (const { pattern, operation } of patterns) {
         const match = currentExpression.match(pattern)
+        console.log('Before matching', match, pattern, currentExpression)
         if (match) {
           matched = true
 
@@ -201,9 +224,11 @@ const evaluateExpression = (
             )
 
             currentExpression = currentExpression.replace(
-              subExpression[0],
+              subExpression[1],
               subExpressionResult.value.toString()
             )
+
+            console.log('Resulting Expression', currentExpression)
 
             matched = false
             continue
@@ -232,11 +257,27 @@ const evaluateExpression = (
             (patterns === logicalPatterns &&
               left.type === 'TROOF' &&
               (!right || right.type === 'TROOF')) ||
+            operation_type === 'string' ||
             (patterns === comparisonPatterns && right && left.type === right.type)
           ) {
             const result = operation(left.value, right ? right.value : undefined)
-            currentExpression = currentExpression.replace(match[0], result.toString())
-            // console.log(`${right?.value} ${operation_type} ${left.value} = ${result}`)
+            const tobeRemove = currentExpression.match(
+              new RegExp(`${match[1]}\\s+AN\\s+${match[2]}`)
+            )
+            console.log(
+              'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH',
+              tobeRemove
+            )
+
+            if (match[3] && tobeRemove) {
+              currentExpression = currentExpression.replace(tobeRemove[0], result.toString())
+            } else {
+              currentExpression = currentExpression.replace(match[0], result.toString())
+            }
+
+            console.log(
+              `${currentExpression} == ${right?.value} ${operation_type} ${left.value} = ${result}`
+            )
           } else {
             const patternName =
               patterns === logicalPatterns
@@ -260,6 +301,7 @@ const evaluateExpression = (
   recursiveEvaluation(arithmeticPatterns, arithmeticKeywords, 'arithmetic')
   recursiveEvaluation(logicalPatterns, logicalKeywords, 'boolean')
   recursiveEvaluation(comparisonPatterns, comparisonKeywords, 'comparison')
+  recursiveEvaluation(stringPatterns, [], 'string')
 
   // If no valid expression resolved
   if (currentExpression !== expression) {
@@ -269,6 +311,8 @@ const evaluateExpression = (
   if (currentExpression.match(/(.+) MKAY$/)) {
     return { type: '', value: currentExpression }
   }
+
+  console.log('Expression Before Error', currentExpression)
 
   // Invalid expression
   errors.push({ error: `Invalid expression: "${expression}"`, line: lineNumber })

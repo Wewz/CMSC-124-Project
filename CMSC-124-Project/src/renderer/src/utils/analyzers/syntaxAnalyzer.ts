@@ -12,8 +12,7 @@ import {
   handleFunctionDeclarations,
   handleFunctionCalls,
   handleTypeCasting,
-  handleSwitch,
-  handleSMOOSH
+  handleSwitch
 } from './syntaxAnalyzerHelper'
 import { evaluateExpression } from './expressionEvaluationHelper'
 import { validExpressionRegex } from './constants'
@@ -21,7 +20,7 @@ import { functionList, functionState } from '@renderer/interfaces/interfaces'
 
 const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
   let localSymbolTable: Record<string, SymbolTableEntry> = {
-    IT: { existingProperty: null, type: 'NOOB', value: null }
+    IT: { existingProperty: null, type: 'NOOB', value: 'NOOB' }
   }
   const errors: { error: string; line: number }[] = []
 
@@ -67,6 +66,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     // const terminal = new Terminal()
     const line = lines[lineNumber]
     const trimmedLine = line
+
       // Remove single-line comments while preserving strings
       .replace(/"([^"]*)"|BTW.*/g, (match, string) => {
         if (string !== undefined) return `"${string}"` // Preserve strings
@@ -137,10 +137,6 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
       continue
     }
 
-    if (/^SMOOSH /.test(trimmedLine)) {
-      handleSMOOSH(trimmedLine, lineNumber, localSymbolTable, errors)
-      continue
-    }
     // Handle variable declarations
     if (/^I HAS A /.test(trimmedLine)) {
       handleVariableDeclaration(trimmedLine, lineNumber, localSymbolTable, errors, insideWazzup)
@@ -335,8 +331,9 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     }
 
     // Handle type casting
-    if (/^MAEK /.test(trimmedLine)) {
-      handleTypeCasting(trimmedLine, lineNumber, localSymbolTable, errors)
+    if (/^MAEK /.test(trimmedLine) || /([^\s]+)\s+IS NOW A /.test(trimmedLine)) {
+      console.log('Current Expression In MAEK', trimmedLine)
+      handleTypeCasting(trimmedLine, lineNumber, 'IT', localSymbolTable, errors)
       continue
     }
 
