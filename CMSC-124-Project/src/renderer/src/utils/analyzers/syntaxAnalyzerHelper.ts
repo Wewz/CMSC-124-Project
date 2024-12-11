@@ -266,12 +266,7 @@ const handleConditionalStatements = (
   }
 
   if (/^OIC$/.test(trimmedLine)) {
-    if (insideSwitch) {
-      errors.push({
-        error: `'OIC' found inside a switch block; it should only be used to end a conditional block`,
-        line: lineNumber + 1
-      })
-    } else if (!insideConditional) {
+    if (!insideConditional && !insideSwitch) {
       errors.push({
         error: `'OIC' found outside of a conditional block`,
         line: lineNumber + 1
@@ -380,12 +375,7 @@ const handleSwitch = (
   }
 
   if (/^OIC$/.test(trimmedLine)) {
-    if (insideConditional) {
-      errors.push({
-        error: `'OIC' found inside a conditional block; it should only be used to end a switch block`,
-        line: lineNumber + 1
-      })
-    } else if (!insideSwitch) {
+if (!insideSwitch && !insideConditional) {
       errors.push({
         error: `'OIC' found outside of a switch block`,
         line: lineNumber + 1

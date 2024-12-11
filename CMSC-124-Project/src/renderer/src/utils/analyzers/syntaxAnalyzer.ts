@@ -261,7 +261,7 @@ const syntaxAnalyzer = async (content: string, dispatch: AppDispatch) => {
     }
 
     // Handle expression statements without assignment operation
-    if (validExpressionRegex.test(trimmedLine)) {
+    if (validExpressionRegex.test(trimmedLine) || localSymbolTable.hasOwnProperty(trimmedLine)) {
       const result = evaluateExpression(trimmedLine, localSymbolTable, lineNumber, errors)
 
       if (result.type !== 'ERROR') {
