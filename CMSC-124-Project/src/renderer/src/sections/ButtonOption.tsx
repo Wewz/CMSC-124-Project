@@ -1,4 +1,5 @@
 import React from 'react'
+import { useEffect } from 'react'
 import handleFileUpload from '@renderer/utils/ui-helpers/fileUpload'
 import syntaxAnalyzer from '@renderer/utils/analyzers/syntaxAnalyzer'
 import lexemeAnalyzer from '@renderer/utils/analyzers/lexemeAnalyzer'
@@ -18,6 +19,8 @@ import {
 const ButtonOption: React.FC = () => {
   const dispatch: AppDispatch = useDispatch()
   const content = useSelector((state: RootState) => state.content.text)
+
+  useEffect(() => {})
 
   return (
     <>
@@ -55,6 +58,7 @@ const ButtonOption: React.FC = () => {
                   messageShown: false
                 })
               )
+              dispatch(setClearErrors())
               dispatch(setClearTerminalMessage())
               dispatch(setClearTerminal(true))
               dispatch(setRun())
